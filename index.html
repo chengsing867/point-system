@@ -1,0 +1,3004 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>积分统计系统</title>
+  <style>
+    :root {
+      --primary: #1a365d;
+      --primary-light: #2d4a7c;
+      --secondary: #d4a574;
+      --secondary-light: #e8c9a8;
+      --bg: #f8f9fa;
+      --card-bg: #ffffff;
+      --text: #1a1a2e;
+      --text-secondary: #6b7280;
+      --success: #10b981;
+      --error: #ef4444;
+      --gold: #ffd700;
+      --silver: #c0c0c0;
+      --bronze: #cd7f32;
+      --shadow: 0 4px 20px rgba(26, 54, 93, 0.1);
+      --shadow-hover: 0 8px 30px rgba(26, 54, 93, 0.15);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    @keyframes shine {
+      0% { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+
+    .page { display: none; animation: fadeIn 0.4s ease-out; }
+    .page.active { display: block; }
+
+    /* 登录页 */
+    .login-page {
+      min-height: 100vh;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .login-card {
+      background: var(--card-bg);
+      border-radius: 24px;
+      padding: 40px 32px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: var(--shadow-hover);
+      animation: slideUp 0.6s ease-out;
+    }
+
+    .login-logo { text-align: center; margin-bottom: 32px; }
+    .login-logo h1 { font-size: 28px; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+    .login-logo p { color: var(--text-secondary); font-size: 14px; }
+
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 8px; }
+
+    .form-group input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      outline: none;
+    }
+
+    .form-group input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(26, 54, 93, 0.1);
+    }
+
+    .code-input-group { display: flex; gap: 12px; }
+    .code-input-group input { flex: 1; }
+
+    .code-btn {
+      padding: 14px 20px;
+      background: var(--secondary);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+    }
+
+    .code-btn:hover { background: var(--secondary-light); color: var(--primary); }
+    .code-btn:disabled { background: #d1d5db; cursor: not-allowed; }
+
+    .btn-primary {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 8px;
+    }
+
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(26, 54, 93, 0.3); }
+    .btn-primary:disabled { background: #9ca3af; cursor: not-allowed; }
+
+    /* 主应用 */
+    .app-container { min-height: 100vh; padding-bottom: 100px; }
+
+    .header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      padding: 20px;
+      color: white;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .user-info { display: flex; align-items: center; gap: 12px; }
+
+    .user-avatar {
+      width: 44px;
+      height: 44px;
+      background: var(--secondary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .user-details h3 { font-size: 16px; font-weight: 600; }
+    .user-details p { font-size: 12px; opacity: 0.8; }
+
+    .header-actions { display: flex; gap: 8px; }
+
+    .header-btn {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      color: white;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .header-btn:hover { background: rgba(255,255,255,0.3); }
+
+    /* 标题区域 */
+    .title-section {
+      text-align: center;
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .main-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .main-title:hover {
+      color: var(--secondary);
+    }
+
+    .title-input {
+      width: 100%;
+      max-width: 300px;
+      padding: 10px 16px;
+      font-size: 20px;
+      font-weight: 700;
+      text-align: center;
+      border: 2px solid var(--secondary);
+      border-radius: 10px;
+      outline: none;
+      color: var(--text);
+      background: white;
+    }
+
+    /* 积分排行榜 */
+    .ranking-section {
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    .ranking-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+
+    .ranking-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 12px;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+
+    .ranking-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: #f8f9fa;
+      border-radius: 20px;
+      font-size: 13px;
+    }
+
+    /* 冠军样式 */
+    .ranking-item.champion {
+      background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%);
+      color: #fff;
+      border: 2px solid #FFD700;
+      box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+      width: 100%;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+      border-radius: 16px;
+      gap: 6px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .ranking-item.champion.current {
+      background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%);
+      box-shadow: 0 4px 12px rgba(255, 215, 0, 0.5);
+    }
+
+    .ranking-item.champion .champion-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .ranking-item.champion .champion-icon {
+      font-size: 22px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .ranking-item.champion .champion-label {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .ranking-item.champion .rank {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .ranking-item.champion .champion-points {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    /* 亚军样式 */
+    .ranking-item.runner-up {
+      background: linear-gradient(135deg, #C0C0C0 0%, #A9A9A9 100%);
+      color: #fff;
+      border: 2px solid #C0C0C0;
+      box-shadow: 0 3px 10px rgba(192, 192, 192, 0.25);
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .ranking-item.runner-up.current {
+      box-shadow: 0 3px 10px rgba(192, 192, 192, 0.4);
+    }
+
+    .ranking-item.runner-up .runner-up-icon {
+      font-size: 18px;
+    }
+
+    .ranking-item.runner-up .runner-up-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .ranking-item.runner-up .name,
+    .ranking-item.runner-up .points {
+      color: #fff;
+    }
+
+    /* 季军样式 */
+    .ranking-item.third-place {
+      background: linear-gradient(135deg, #CD7F32 0%, #B87333 100%);
+      color: #fff;
+      border: 2px solid #CD7F32;
+      box-shadow: 0 3px 10px rgba(205, 127, 50, 0.25);
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .ranking-item.third-place.current {
+      box-shadow: 0 3px 10px rgba(205, 127, 50, 0.4);
+    }
+
+    .ranking-item.third-place .third-place-icon {
+      font-size: 18px;
+    }
+
+    .ranking-item.third-place .third-place-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .ranking-item.third-place .name,
+    .ranking-item.third-place .points {
+      color: #fff;
+    }
+
+    /* 其他排名样式 */
+    .ranking-item.other-rank {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border: 1px solid #dee2e6;
+      padding: 8px 14px;
+    }
+
+    .ranking-item.other-rank.current {
+      border: 2px solid var(--secondary);
+      background: rgba(212, 165, 116, 0.15);
+    }
+
+    .ranking-item.other-rank .other-rank-label {
+      font-weight: 700;
+      color: #6c757d;
+      min-width: 50px;
+    }
+
+    .ranking-item.current .other-rank-label {
+      color: var(--secondary);
+    }
+
+    .ranking-item .rank {
+      font-weight: 700;
+      min-width: 20px;
+      color: var(--text-secondary);
+    }
+
+    .ranking-item .name {
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .ranking-item .points {
+      font-weight: 700;
+      color: var(--secondary);
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+    }
+
+    /* 总积分展示 */
+    .total-banner {
+      background: linear-gradient(135deg, var(--secondary) 0%, #c49660 100%);
+      color: white;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .total-banner::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      animation: shine 3s linear infinite;
+    }
+
+    .total-banner .label { font-size: 13px; opacity: 0.9; margin-bottom: 4px; }
+    .total-banner .value { font-size: 36px; font-weight: 700; }
+    .total-banner .sub { font-size: 12px; opacity: 0.85; margin-top: 4px; }
+
+    /* 段标签 */
+    .section-tabs {
+      display: flex;
+      background: var(--card-bg);
+      border-bottom: 1px solid #e5e7eb;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .section-tab {
+      flex: 1;
+      padding: 14px;
+      background: none;
+      border: none;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s ease;
+    }
+
+    .section-tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--secondary);
+      font-weight: 600;
+    }
+
+    .tab-content { display: none; padding: 16px; }
+    .tab-content.active { display: block; }
+
+    /* 表格样式 */
+    .points-table {
+      width: 100%;
+      background: var(--card-bg);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      border-collapse: collapse;
+    }
+
+    .points-table th,
+    .points-table td {
+      padding: 10px 8px;
+      text-align: center;
+      font-size: 13px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .points-table th {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: white;
+      font-weight: 600;
+      font-size: 12px;
+    }
+
+    .points-table th .sub {
+      display: block;
+      font-size: 10px;
+      font-weight: 400;
+      opacity: 0.85;
+      margin-top: 2px;
+    }
+
+    .points-table tr.header-row td {
+      background: #f3f4f6;
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .points-table tr.day-row td {
+      background: rgba(26, 54, 93, 0.05);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .points-table td.name {
+      text-align: left;
+      font-weight: 500;
+      background: rgba(212, 165, 116, 0.05);
+    }
+
+    .points-table td.current-user {
+      background: rgba(212, 165, 116, 0.15);
+      font-weight: 600;
+    }
+
+    .points-table td.total {
+      background: var(--primary);
+      color: white;
+      font-weight: 700;
+    }
+
+    .points-table input {
+      width: 60px;
+      padding: 6px 4px;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      font-size: 13px;
+      text-align: center;
+      outline: none;
+    }
+
+    .points-table input:focus { border-color: var(--secondary); }
+
+    .points-table .value-cell { color: var(--text-secondary); font-size: 12px; }
+
+    .day-separator {
+      background: var(--primary);
+      color: white;
+      font-weight: 600;
+      text-align: left !important;
+      padding: 8px 12px !important;
+      font-size: 13px;
+    }
+
+    /* 双栏布局 */
+    .two-column {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .column-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .column-header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: white;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .column-header.gold { background: linear-gradient(135deg, var(--secondary) 0%, #c49660 100%); }
+
+    .column-content { padding: 12px; }
+
+    /* 目标达成表格 */
+    .target-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .target-table th,
+    .target-table td {
+      padding: 8px 6px;
+      text-align: center;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .target-table th {
+      background: #f9fafb;
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 11px;
+    }
+
+    .target-table td { color: var(--text); font-size: 13px; }
+    .target-table td:last-child { font-weight: 600; }
+
+    .target-table .rate { color: var(--secondary); font-weight: 700; }
+    .target-table .rate.low { color: var(--error); }
+    .target-table .rate.mid { color: #f59e0b; }
+    .target-table .rate.high { color: var(--success); }
+
+    .target-table input {
+      width: 50px;
+      padding: 4px;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .target-table input:focus { border-color: var(--secondary); outline: none; }
+    .target-table input:read-only { background: #f3f4f6; color: var(--text-secondary); border-color: transparent; }
+
+    /* 周数据填写 */
+    .week-data-section {
+      margin-top: 16px;
+    }
+
+    .week-data-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+
+    .week-data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .week-data-table th {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      color: var(--text-secondary);
+      font-weight: 600;
+      padding: 10px 6px;
+      text-align: center;
+      font-size: 11px;
+      border-bottom: 2px solid #dee2e6;
+    }
+
+    .week-data-table th:first-child {
+      text-align: left;
+      padding-left: 12px;
+    }
+
+    .week-data-table td {
+      padding: 10px 6px;
+      text-align: center;
+      border-bottom: 1px solid #f1f3f4;
+      font-size: 13px;
+    }
+
+    .week-data-table td:first-child {
+      text-align: left;
+      font-weight: 600;
+      color: var(--text);
+      padding-left: 12px;
+      background: #fafbfc;
+    }
+
+    .week-data-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .week-data-table tr:hover td {
+      background: #f8f9fa;
+    }
+
+    .week-data-table tr:hover td:first-child {
+      background: #f0f4f8;
+    }
+
+    .week-data-table input {
+      width: 38px;
+      padding: 6px 4px;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      font-size: 12px;
+      text-align: center;
+      background: #fff;
+      transition: all 0.2s;
+    }
+
+    .week-data-table input:hover {
+      border-color: #c49660;
+    }
+
+    .week-data-table input:focus {
+      border-color: var(--secondary);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.2);
+    }
+
+    /* 隐藏数字输入框的上下箭头 */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+
+    .week-data-total {
+      background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+      padding: 14px;
+      margin-top: 12px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-around;
+      font-size: 12px;
+      border: 1px solid #e9ecef;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .week-data-total .item {
+      text-align: center;
+      padding: 8px 16px;
+      border-radius: 8px;
+      background: white;
+      min-width: 70px;
+    }
+
+    .week-data-total .label {
+      color: var(--text-secondary);
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+
+    .week-data-total .value {
+      font-weight: 700;
+      color: var(--secondary);
+      font-size: 18px;
+    }
+
+    .team-summary-section {
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 2px dashed rgba(212, 165, 116, 0.3);
+    }
+
+    /* 累计积分 */
+    .total-points-section {
+      background: linear-gradient(135deg, rgba(26, 54, 93, 0.1) 0%, rgba(212, 165, 116, 0.1) 100%);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      margin-bottom: 16px;
+      border: 1px solid rgba(212, 165, 116, 0.3);
+    }
+
+    .total-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .total-value {
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--secondary);
+    }
+
+    /* 周积分统计表格 */
+    .week-points-section {
+      margin-bottom: 16px;
+    }
+
+    .week-points-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+
+    .week-points-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10px;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .week-points-table th {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      color: var(--text-secondary);
+      font-weight: 600;
+      padding: 8px 4px;
+      text-align: center;
+      font-size: 10px;
+      border-bottom: 2px solid #dee2e6;
+    }
+
+    .week-points-table th:first-child {
+      text-align: left;
+      padding-left: 8px;
+    }
+
+    .week-points-table td {
+      padding: 8px 4px;
+      text-align: center;
+      border-bottom: 1px solid #f1f3f4;
+      font-size: 11px;
+    }
+
+    .week-points-table td.item-name {
+      text-align: left;
+      font-weight: 600;
+      color: var(--text);
+      padding-left: 8px;
+      background: #fafbfc;
+    }
+
+    .week-points-table td.total {
+      font-weight: 700;
+      color: var(--secondary);
+      background: rgba(212, 165, 116, 0.1);
+    }
+
+    .week-points-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* 积分小表格 */
+    .mini-points-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .mini-points-table th,
+    .mini-points-table td {
+      padding: 8px 4px;
+      text-align: center;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .mini-points-table th {
+      background: #f9fafb;
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 11px;
+    }
+
+    .mini-points-table td { color: var(--text); }
+    .mini-points-table td:first-child { text-align: left; font-weight: 500; }
+    .mini-points-table td.rule { font-size: 10px; color: var(--text-secondary); }
+    .mini-points-table td.points-cell { font-weight: 600; color: var(--secondary); }
+
+    .mini-points-table input {
+      width: 45px;
+      padding: 4px;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .mini-points-table input:focus { border-color: var(--secondary); outline: none; }
+    .mini-points-table input:disabled { background: #f3f4f6; color: var(--text-secondary); }
+
+    .section-highlight {
+      background: linear-gradient(135deg, rgba(212, 165, 116, 0.1) 0%, rgba(212, 165, 116, 0.05) 100%);
+    }
+
+    .target-summary {
+      background: #f9fafb;
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 8px;
+      text-align: center;
+    }
+
+    .target-summary .label { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; }
+    .target-summary .value { font-size: 18px; font-weight: 700; color: var(--primary); }
+    .target-summary .value.achieved { color: var(--success); }
+
+    /* 周视图 */
+    .week-section {
+      margin-bottom: 16px;
+    }
+
+    .week-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+
+    .week-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .week-day {
+      background: #f3f4f6;
+      border-radius: 8px;
+      padding: 8px 4px;
+      text-align: center;
+    }
+
+    .week-day.today {
+      background: linear-gradient(135deg, var(--secondary) 0%, #c49660 100%);
+      color: white;
+    }
+
+    .week-day.has-data {
+      background: rgba(16, 185, 129, 0.15);
+    }
+
+    .week-day.today.has-data {
+      background: linear-gradient(135deg, var(--secondary) 0%, #c49660 100%);
+    }
+
+    .day-name {
+      font-size: 10px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .week-day.today .day-name {
+      color: rgba(255,255,255,0.9);
+    }
+
+    .day-points {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .week-day.today .day-points {
+      color: white;
+    }
+
+    .week-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(135deg, rgba(26, 54, 93, 0.1) 0%, rgba(212, 165, 116, 0.1) 100%);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .week-total .value {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--secondary);
+    }
+
+    .day-form {
+      background: #f9fafb;
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .day-form-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+
+    /* 排行页面 */
+    .podium-section { padding: 20px; }
+
+    .champion-card {
+      background: linear-gradient(135deg, #ffd700 0%, #ffb800 100%);
+      border-radius: 20px;
+      padding: 24px;
+      color: white;
+      text-align: center;
+      box-shadow: 0 8px 30px rgba(255, 215, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .champion-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%);
+      animation: shine 3s linear infinite;
+    }
+
+    .champion-crown {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .champion-label {
+      font-size: 14px;
+      opacity: 0.9;
+      margin-bottom: 4px;
+      position: relative;
+    }
+
+    .champion-name {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      position: relative;
+    }
+
+    .champion-points {
+      font-size: 32px;
+      font-weight: 700;
+      position: relative;
+    }
+
+    .champion-points-label {
+      font-size: 12px;
+      opacity: 0.9;
+      position: relative;
+    }
+
+    .podium-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .runner-up {
+      background: linear-gradient(135deg, #c0c0c0 0%, #a8a8a8 100%);
+      border-radius: 16px;
+      padding: 20px;
+      color: white;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(192, 192, 192, 0.3);
+    }
+
+    .third-place {
+      background: linear-gradient(135deg, #cd7f32 0%, #b8722d 100%);
+      border-radius: 16px;
+      padding: 20px;
+      color: white;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(205, 127, 50, 0.3);
+    }
+
+    .runner-up .medal,
+    .third-place .medal {
+      font-size: 28px;
+      margin-bottom: 4px;
+    }
+
+    .runner-up .label,
+    .third-place .label {
+      font-size: 12px;
+      opacity: 0.9;
+      margin-bottom: 2px;
+    }
+
+    .runner-up .name,
+    .third-place .name {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .runner-up .points,
+    .third-place .points {
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .others-list { background: var(--card-bg); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
+
+    .other-rank-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .other-rank-item:last-child { border-bottom: none; }
+    .other-rank-item.current { background: rgba(212, 165, 116, 0.1); }
+
+    .other-rank-item .rank-num {
+      width: 28px;
+      height: 28px;
+      background: #e5e7eb;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin-right: 12px;
+    }
+
+    .other-rank-item .name { flex: 1; font-size: 14px; color: var(--text); }
+    .other-rank-item .points { font-size: 16px; font-weight: 700; color: var(--secondary); }
+
+    .ranking-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-secondary);
+    }
+
+    .empty-state .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+
+    /* 底部提交 */
+    .bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--card-bg);
+      padding: 16px 20px;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--secondary) 0%, #c49660 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(212, 165, 116, 0.4); }
+    .submit-btn:disabled { background: #d1d5db; cursor: not-allowed; transform: none; box-shadow: none; }
+    .submit-btn .total { font-size: 18px; margin-left: 8px; }
+
+    /* 导出按钮 */
+    .export-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-export {
+      flex: 1;
+      min-width: 120px;
+      padding: 12px 16px;
+      background: var(--success);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-export:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: var(--text);
+      color: white;
+      padding: 14px 24px;
+      border-radius: 12px;
+      font-size: 14px;
+      z-index: 1000;
+      transition: transform 0.3s ease;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--error); }
+
+    /* 管理弹窗 */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .modal-overlay.show { display: flex; }
+
+    .modal {
+      background: var(--card-bg);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 500px;
+      max-height: 80vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      animation: slideUp 0.3s ease-out;
+    }
+
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h3 { font-size: 18px; font-weight: 600; color: var(--text); }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+    .modal-footer { padding: 16px 20px; border-top: 1px solid #e5e7eb; display: flex; gap: 12px; }
+
+    .btn-secondary {
+      flex: 1;
+      padding: 12px;
+      background: #f3f4f6;
+      color: var(--text);
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .section-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .add-member-form { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .add-member-form input {
+      flex: 1;
+      min-width: 100px;
+      padding: 10px;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .add-member-form input:focus { border-color: var(--primary); }
+    .add-member-form button {
+      padding: 10px 16px;
+      background: var(--secondary);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .member-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 12px;
+      background: #f9fafb;
+      border-radius: 10px;
+      margin-bottom: 8px;
+    }
+
+    .member-item .avatar {
+      width: 32px;
+      height: 32px;
+      background: var(--secondary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: white;
+      margin-right: 10px;
+    }
+
+    .member-item .info { flex: 1; }
+    .member-item .name { font-size: 14px; font-weight: 500; }
+    .member-item .phone { font-size: 12px; color: var(--text-secondary); }
+
+    .member-item .delete-btn {
+      background: none;
+      border: none;
+      color: var(--error);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .empty-members {
+      text-align: center;
+      padding: 20px;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .target-settings-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .target-settings-item {
+      background: #f9fafb;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 8px;
+    }
+
+    .target-settings-item .user-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .target-settings-item .target-inputs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .target-settings-item .target-input-group {
+      text-align: center;
+    }
+
+    .target-settings-item .target-input-group label {
+      display: block;
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+
+    .target-settings-item .target-input-group input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      font-size: 13px;
+      text-align: center;
+      background: white;
+    }
+
+    .target-settings-item .target-input-group input:focus {
+      border-color: var(--secondary);
+      outline: none;
+    }
+
+    .rules-settings-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .rule-settings-item {
+      background: #f9fafb;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .rule-settings-item .rule-settings-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .rule-settings-item .rule-name-input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      background: white;
+    }
+
+    .rule-settings-item .rule-name-input:focus {
+      border-color: var(--secondary);
+      outline: none;
+    }
+
+    .rule-settings-item .rule-delete-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      padding: 6px 10px;
+      margin-left: 8px;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+    }
+
+    .rule-settings-item .rule-delete-btn:hover {
+      opacity: 1;
+    }
+
+    .rule-settings-item .rule-settings-body {
+      padding-top: 8px;
+      border-top: 1px dashed #e5e7eb;
+    }
+
+    .rule-settings-item .rule-input-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .rule-settings-item .rule-label {
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .rule-settings-item .rule-points-input {
+      width: 60px;
+      padding: 6px 8px;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      font-size: 14px;
+      text-align: center;
+      background: white;
+    }
+
+    .rule-settings-item .rule-unit-qty-input {
+      width: 50px;
+      padding: 6px 8px;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      font-size: 14px;
+      text-align: center;
+      background: white;
+    }
+
+    .rule-settings-item .rule-unit-input {
+      width: 60px;
+      padding: 6px 8px;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      font-size: 14px;
+      text-align: center;
+      background: white;
+    }
+
+    .rule-settings-item input:focus {
+      border-color: var(--secondary);
+      outline: none;
+    }
+
+    .rule-settings-item .rule-preview {
+      font-size: 13px;
+      color: var(--secondary);
+      font-weight: 600;
+      background: rgba(212, 165, 116, 0.1);
+      padding: 6px 10px;
+      border-radius: 6px;
+      display: inline-block;
+    }
+
+    .add-rule-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, var(--secondary) 0%, #c49660 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .add-rule-btn:hover {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div id="toast" class="toast"></div>
+
+  <!-- 登录页 -->
+  <div id="loginPage" class="page login-page active">
+    <div class="login-card">
+      <div class="login-logo">
+        <h1>积分统计</h1>
+        <p>销售团队业绩管理系统</p>
+      </div>
+
+      <div id="step1">
+        <div class="form-group">
+          <label>手机号码</label>
+          <input type="tel" id="phone" placeholder="请输入手机号" maxlength="11">
+        </div>
+        <div class="form-group">
+          <label>密码</label>
+          <input type="password" id="password" placeholder="请输入密码" maxlength="20">
+        </div>
+        <button class="btn-primary" onclick="verifyLogin()">登 录</button>
+      </div>
+
+      <div id="step2" style="display: none;">
+        <div class="form-group">
+          <label>真实姓名</label>
+          <input type="text" id="realName" placeholder="请输入真实姓名">
+        </div>
+        <button class="btn-primary" onclick="completeRegister()">完成注册</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 主应用 -->
+  <div id="appContainer" class="app-container" style="display: none;">
+    <div class="header">
+      <div class="header-top">
+        <div class="user-info">
+          <div class="user-avatar" id="userAvatar">-</div>
+          <div class="user-details">
+            <h3 id="userName">-</h3>
+            <p id="userPhone">-</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="header-btn" onclick="openQRModal()">📱 扫码参与</button>
+          <button class="header-btn" onclick="openAdminModal()">⚙️ 管理</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 标题区域 -->
+    <div class="title-section">
+      <div class="main-title" id="mainTitle" onclick="editTitle()">积分统计系统</div>
+      <input type="text" id="titleInput" class="title-input" placeholder="输入标题" style="display:none;" onblur="saveTitle(this.value)">
+    </div>
+
+    <!-- 顶部团队汇总区域 -->
+    <div class="two-column" style="margin-bottom: 16px;">
+      <!-- 左栏：团队目标汇总 -->
+      <div class="column-card">
+        <div class="column-header">🏢 团队汇总</div>
+        <div class="column-content" id="teamSummaryColumn"></div>
+      </div>
+      <!-- 右栏：积分排行榜 -->
+      <div class="column-card">
+        <div class="column-header gold">🏆 积分排行榜</div>
+        <div class="ranking-list" id="rankingList"></div>
+      </div>
+    </div>
+
+    <!-- 主内容区域 -->
+    <div id="reportTab" class="tab-content active">
+      <!-- 目标与达成 -->
+      <div class="two-column">
+        <!-- 左栏：目标达成 -->
+        <div class="column-card">
+          <div class="column-header">🎯 目标与达成</div>
+          <div class="column-content" id="targetColumn"></div>
+        </div>
+        <!-- 右栏：积分 -->
+        <div class="column-card">
+          <div class="column-header gold">💰 积分统计</div>
+          <div class="column-content" id="pointsColumn"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部提交 -->
+    <div class="bottom-bar" id="bottomBar">
+      <button class="submit-btn" id="submitBtn" onclick="submitAll()" disabled>
+        确认提交 <span class="total">+0 积分</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 管理弹窗 -->
+  <div id="adminModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>⚙️ 后台管理</h3>
+        <button class="modal-close" onclick="closeAdminModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="section-label">添加成员</div>
+        <div class="add-member-form">
+          <input type="text" id="newMemberName" placeholder="姓名">
+          <input type="tel" id="newMemberPhone" placeholder="手机号" maxlength="11">
+          <button onclick="addMember()">添加</button>
+        </div>
+
+        <div class="section-label">成员列表 (<span id="memberCount">0</span>人)</div>
+        <div id="memberList"></div>
+
+        <div class="section-label" style="margin-top: 16px;">🎯 设置成员目标</div>
+        <div id="targetSettings"></div>
+
+        <div class="section-label" style="margin-top: 16px;">💰 积分规则配置</div>
+        <div id="rulesSettings"></div>
+
+        <div class="section-label" style="margin-top: 16px;">📊 数据导出</div>
+        <div class="export-buttons">
+          <button class="btn-export" onclick="exportData('week')">导出本周数据</button>
+          <button class="btn-export" onclick="exportData('all')">导出全部数据</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeAdminModal()">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 扫码参与弹窗 -->
+  <div id="qrModal" class="modal-overlay">
+    <div class="modal" style="max-width: 420px;">
+      <div class="modal-header">
+        <h3>📱 扫码参与</h3>
+        <button class="modal-close" onclick="closeQRModal()">×</button>
+      </div>
+      <div class="modal-body" style="padding: 24px; text-align: center;">
+        <div id="qrImageContainer" style="padding: 20px; background: white; border-radius: 12px; display: inline-block;">
+          <!-- 二维码图片将在这里动态生成 -->
+        </div>
+        <p style="margin-top: 16px; color: var(--text-secondary); font-size: 13px;">
+          手机扫描上方二维码即可进入系统参与填写
+        </p>
+        <div id="qrUrlText" style="margin-top: 12px; padding: 10px; background: #f5f5f5; border-radius: 8px; font-size: 12px; word-break: break-all; color: var(--text);"></div>
+        <button class="btn-export" style="margin-top: 16px;" onclick="copyQRUrl()">📋 复制链接</button>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeQRModal()">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 积分配置
+    const ELEMENTS = [
+      { type: 'call', name: '呼出', unit: '个', rule: '1分/个', pointsPerUnit: 1 },
+      { type: 'mass', name: '群发', unit: '个', rule: '1分/10个', pointsPerUnit: 0.1, maxPoints: 50 },
+      { type: 'invite', name: '邀约', unit: '批', rule: '50分/批', pointsPerUnit: 50 },
+      { type: 'test', name: '试驾', unit: '批', rule: '20分/批', pointsPerUnit: 20 },
+      { type: 'ticket', name: '门票', unit: '个', rule: '100分/个', pointsPerUnit: 100 },
+      { type: 'delivery', name: '交付', unit: '个', rule: '30分/个', pointsPerUnit: 30 }
+    ];
+
+    // 目标配置
+    const TARGET_TYPES = [
+      { type: 'order', name: '订单', targetKey: 'orderTarget', achieveKey: 'orderAchieve' },
+      { type: 'invite', name: '邀约', targetKey: 'inviteTarget', achieveKey: 'inviteAchieve' },
+      { type: 'ticket', name: '门票', targetKey: 'ticketTarget', achieveKey: 'ticketAchieve' }
+    ];
+
+    let state = {
+      currentUser: null,
+      users: [],
+      records: [],
+      values: {},
+      targets: {},
+      generatedCode: null,
+      pendingPhone: null,
+      currentTab: 'report'
+    };
+
+    function init() {
+      loadData();
+      checkAuth();
+    }
+
+    function loadData() {
+      const users = localStorage.getItem('point_users');
+      const records = localStorage.getItem('point_records');
+      const targets = localStorage.getItem('point_targets');
+      const rules = localStorage.getItem('point_rules');
+      state.users = users ? JSON.parse(users) : [];
+      state.records = records ? JSON.parse(records) : [];
+      state.targets = targets ? JSON.parse(targets) : {};
+
+      // 加载积分规则，如果没有则使用默认值
+      if (rules) {
+        state.rules = JSON.parse(rules);
+      } else {
+        state.rules = JSON.parse(JSON.stringify(ELEMENTS));
+        saveRules();
+      }
+
+      // 如果没有任何用户，创建默认管理员
+      if (state.users.length === 0) {
+        state.users.push({
+          id: 'admin',
+          phone: '13829218486',
+          name: '成林涛',
+          isAdmin: true,
+          createdAt: new Date().toISOString()
+        });
+        saveData();
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem('point_users', JSON.stringify(state.users));
+      localStorage.setItem('point_records', JSON.stringify(state.records));
+      localStorage.setItem('point_targets', JSON.stringify(state.targets));
+    }
+
+    function saveRules() {
+      localStorage.setItem('point_rules', JSON.stringify(state.rules));
+    }
+
+    function checkAuth() {
+      const user = localStorage.getItem('point_current_user');
+      if (user) {
+        state.currentUser = JSON.parse(user);
+        showApp();
+      }
+    }
+
+    function showApp() {
+      document.getElementById('loginPage').classList.remove('active');
+      document.getElementById('appContainer').style.display = 'block';
+      updateUserInfo();
+      renderTeamSummaryColumn();
+      renderTargetColumn();
+      renderPointsColumn();
+      updateBanner();
+      loadTitle();
+    }
+
+    function loadTitle() {
+      const savedTitle = localStorage.getItem('point_system_title');
+      if (savedTitle) {
+        document.getElementById('mainTitle').textContent = savedTitle;
+      }
+    }
+
+    // 渲染团队汇总栏（顶部区域）
+    function renderTeamSummaryColumn() {
+      const container = document.getElementById('teamSummaryColumn');
+      if (!state.currentUser) {
+        container.innerHTML = '<div class="empty-state"><p>请先登录</p></div>';
+        return;
+      }
+
+      // 计算团队汇总数据
+      const teamData = getTeamSummary();
+
+      let html = `
+        <!-- 团队总目标表格 -->
+        <table class="week-data-table" style="font-size: 11px; margin-bottom: 12px;">
+          <thead>
+            <tr>
+              <th>类型</th>
+              <th>订单目标</th>
+              <th>邀约目标</th>
+              <th>门票目标</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>🎯 团队目标</td>
+              <td style="font-weight:600;">${teamData.totalOrderTarget}</td>
+              <td style="font-weight:600;">${teamData.totalInviteTarget}</td>
+              <td style="font-weight:600;">${teamData.totalTicketTarget}</td>
+            </tr>
+            <tr>
+              <td>✅ 团队达成</td>
+              <td>${teamData.totalOrderAchieve}</td>
+              <td>${teamData.totalInviteAchieve}</td>
+              <td>${teamData.totalTicketAchieve}</td>
+            </tr>
+            <tr style="background: rgba(212,165,116,0.08);">
+              <td style="font-weight:700;">📊 达成率</td>
+              <td class="rate ${getRateClass(teamData.totalOrderTarget ? teamData.totalOrderAchieve / teamData.totalOrderTarget : 0)}" style="font-weight:600;">
+                ${teamData.totalOrderTarget ? Math.round((teamData.totalOrderAchieve / teamData.totalOrderTarget) * 100) + '%' : '-'}
+              </td>
+              <td class="rate ${getRateClass(teamData.totalInviteTarget ? teamData.totalInviteAchieve / teamData.totalInviteTarget : 0)}" style="font-weight:600;">
+                ${teamData.totalInviteTarget ? Math.round((teamData.totalInviteAchieve / teamData.totalInviteTarget) * 100) + '%' : '-'}
+              </td>
+              <td class="rate ${getRateClass(teamData.totalTicketTarget ? teamData.totalTicketAchieve / teamData.totalTicketTarget : 0)}" style="font-weight:600;">
+                ${teamData.totalTicketTarget ? Math.round((teamData.totalTicketAchieve / teamData.totalTicketTarget) * 100) + '%' : '-'}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- 团队周一~周日数据统计 -->
+        <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;">📅 团队周一~周日数据</div>
+        <table class="week-data-table" style="font-size: 10px;">
+          <thead>
+            <tr>
+              <th>项目</th>
+              <th>周一</th>
+              <th>周二</th>
+              <th>周三</th>
+              <th>周四</th>
+              <th>周五</th>
+              <th>周六</th>
+              <th>周日</th>
+              <th>合计</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>📋 订单</td>
+              ${teamData.teamOrderWeek.map(v => `<td>${v}</td>`).join('')}
+              <td style="font-weight:700;color:var(--secondary);">${teamData.teamOrderWeek.reduce((a, b) => a + b, 0)}</td>
+            </tr>
+            <tr>
+              <td>🤝 邀约</td>
+              ${teamData.teamInviteWeek.map(v => `<td>${v}</td>`).join('')}
+              <td style="font-weight:700;color:var(--secondary);">${teamData.teamInviteWeek.reduce((a, b) => a + b, 0)}</td>
+            </tr>
+            <tr>
+              <td>🎫 门票</td>
+              ${teamData.teamTicketWeek.map(v => `<td>${v}</td>`).join('')}
+              <td style="font-weight:700;color:var(--secondary);">${teamData.teamTicketWeek.reduce((a, b) => a + b, 0)}</td>
+            </tr>
+          </tbody>
+        </table>
+      `;
+
+      container.innerHTML = html;
+    }
+
+    function editTitle() {
+      if (!state.currentUser || !state.currentUser.isAdmin) return;
+      const title = document.getElementById('mainTitle');
+      const input = document.getElementById('titleInput');
+      input.value = title.textContent;
+      title.style.display = 'none';
+      input.style.display = 'inline-block';
+      input.focus();
+      input.select();
+    }
+
+    function saveTitle(value) {
+      const title = document.getElementById('mainTitle');
+      const input = document.getElementById('titleInput');
+      const newValue = value.trim() || '积分统计系统';
+      title.textContent = newValue;
+      localStorage.setItem('point_system_title', newValue);
+      title.style.display = 'block';
+      input.style.display = 'none';
+    }
+
+    function showLogin() {
+      document.getElementById('loginPage').classList.add('active');
+      document.getElementById('appContainer').style.display = 'none';
+    }
+
+    function updateUserInfo() {
+      if (!state.currentUser) return;
+      document.getElementById('userName').textContent = state.currentUser.name;
+      document.getElementById('userAvatar').textContent = state.currentUser.name.charAt(0);
+      document.getElementById('userPhone').textContent = state.currentUser.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
+    }
+
+    // 获取用户目标数据
+    function getUserTargets(userId) {
+      if (!state.targets[userId]) {
+        state.targets[userId] = {
+          orderTarget: 0,
+          inviteTarget: 0,
+          ticketTarget: 0,
+          orderAchieve: 0,
+          inviteAchieve: 0,
+          ticketAchieve: 0
+        };
+      }
+      
+      // 从周数据中自动计算达成数
+      const now = new Date();
+      const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - (dayOfWeek - 1));
+      monday.setHours(0, 0, 0, 0);
+
+      ['order', 'invite', 'ticket'].forEach(type => {
+        let total = 0;
+        for (let i = 0; i < 7; i++) {
+          const day = new Date(monday);
+          day.setDate(monday.getDate() + i);
+          const dateStr = day.toISOString().split('T')[0];
+          const key = `week_${userId}_${type}_${dateStr}`;
+          const val = parseInt(localStorage.getItem(key)) || 0;
+          total += val;
+        }
+        const achieveKey = type + 'Achieve';
+        state.targets[userId][achieveKey] = total;
+      });
+
+      return state.targets[userId];
+    }
+
+    // 获取团队汇总数据
+    function getTeamSummary() {
+      const now = new Date();
+      const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - (dayOfWeek - 1));
+      monday.setHours(0, 0, 0, 0);
+
+      const teamOrderWeek = [0, 0, 0, 0, 0, 0, 0];
+      const teamInviteWeek = [0, 0, 0, 0, 0, 0, 0];
+      const teamTicketWeek = [0, 0, 0, 0, 0, 0, 0];
+
+      let totalOrderTarget = 0;
+      let totalInviteTarget = 0;
+      let totalTicketTarget = 0;
+      let totalOrderAchieve = 0;
+      let totalInviteAchieve = 0;
+      let totalTicketAchieve = 0;
+
+      state.users.forEach(user => {
+        // 累加每个用户的目标和达成
+        const targets = getUserTargets(user.id);
+        totalOrderTarget += targets.orderTarget || 0;
+        totalInviteTarget += targets.inviteTarget || 0;
+        totalTicketTarget += targets.ticketTarget || 0;
+        totalOrderAchieve += targets.orderAchieve || 0;
+        totalInviteAchieve += targets.inviteAchieve || 0;
+        totalTicketAchieve += targets.ticketAchieve || 0;
+
+        // 累加每个用户的周一到周日数据
+        ['order', 'invite', 'ticket'].forEach(type => {
+          for (let i = 0; i < 7; i++) {
+            const day = new Date(monday);
+            day.setDate(monday.getDate() + i);
+            const dateStr = day.toISOString().split('T')[0];
+            const key = `week_${user.id}_${type}_${dateStr}`;
+            const val = parseInt(localStorage.getItem(key)) || 0;
+            if (type === 'order') teamOrderWeek[i] += val;
+            else if (type === 'invite') teamInviteWeek[i] += val;
+            else if (type === 'ticket') teamTicketWeek[i] += val;
+          }
+        });
+      });
+
+      return {
+        totalOrderTarget,
+        totalInviteTarget,
+        totalTicketTarget,
+        totalOrderAchieve,
+        totalInviteAchieve,
+        totalTicketAchieve,
+        teamOrderWeek,
+        teamInviteWeek,
+        teamTicketWeek
+      };
+    }
+
+    // 渲染目标达成栏
+    function renderTargetColumn() {
+      const container = document.getElementById('targetColumn');
+      if (!state.currentUser) {
+        container.innerHTML = '<div class="empty-state"><p>请先登录</p></div>';
+        return;
+      }
+
+      const myTargets = getUserTargets(state.currentUser.id);
+      const isAdmin = state.currentUser.isAdmin || false;
+
+      // 计算各项达成率
+      const ticketRate = myTargets.ticketTarget ? (myTargets.ticketAchieve) / myTargets.ticketTarget : 0;
+      const orderRate = myTargets.orderTarget ? (myTargets.orderAchieve) / myTargets.orderTarget : 0;
+      const inviteRate = myTargets.inviteTarget ? (myTargets.inviteAchieve) / myTargets.inviteTarget : 0;
+
+      let html = `
+        <table class="target-table">
+          <thead>
+            <tr>
+              <th>类型</th>
+              <th>目标</th>
+              <th>达成</th>
+              <th>达成率</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>📋 订单</td>
+              <td><input type="number" id="orderTarget" value="${myTargets.orderTarget}" min="0" ${isAdmin ? '' : 'readonly'} onchange="updateMyTarget('orderTarget', this.value)"></td>
+              <td>${myTargets.orderAchieve}</td>
+              <td class="rate ${getRateClass(orderRate)}">${getRateText(orderRate)}</td>
+            </tr>
+            <tr>
+              <td>🤝 邀约</td>
+              <td><input type="number" id="inviteTarget" value="${myTargets.inviteTarget}" min="0" ${isAdmin ? '' : 'readonly'} onchange="updateMyTarget('inviteTarget', this.value)"></td>
+              <td>${myTargets.inviteAchieve}</td>
+              <td class="rate ${getRateClass(inviteRate)}">${getRateText(inviteRate)}</td>
+            </tr>
+            <tr class="section-highlight">
+              <td>🎫 门票</td>
+              <td><input type="number" id="ticketTarget" value="${myTargets.ticketTarget}" min="0" ${isAdmin ? '' : 'readonly'} onchange="updateMyTarget('ticketTarget', this.value)"></td>
+              <td>${myTargets.ticketAchieve}</td>
+              <td class="rate ${getRateClass(ticketRate)}">${getRateText(ticketRate)}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="target-summary">
+          <div class="label">${isAdmin ? '点击目标数字可修改' : '目标由管理员设置'}</div>
+          <div class="value" style="font-size:14px;color:var(--text-secondary);">达成数为累计统计</div>
+        </div>
+
+        <div class="week-data-section">
+          <div class="week-data-title">📅 本周数据录入 (周一~周日)</div>
+          <table class="week-data-table">
+            <thead>
+              <tr>
+                <th>项目</th>
+                <th>周一</th>
+                <th>周二</th>
+                <th>周三</th>
+                <th>周四</th>
+                <th>周五</th>
+                <th>周六</th>
+                <th>周日</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>📋 订单</td>
+                ${generateWeekInputs('order', isAdmin)}
+              </tr>
+              <tr>
+                <td>🤝 邀约</td>
+                ${generateWeekInputs('invite', isAdmin)}
+              </tr>
+              <tr>
+                <td>🎫 门票</td>
+                ${generateWeekInputs('ticket', isAdmin)}
+              </tr>
+            </tbody>
+          </table>
+          <div class="week-data-total">
+            <div class="item">
+              <div class="label">订单合计</div>
+              <div class="value" id="weekTotalOrder">0</div>
+            </div>
+            <div class="item">
+              <div class="label">邀约合计</div>
+              <div class="value" id="weekTotalInvite">0</div>
+            </div>
+            <div class="item">
+              <div class="label">门票合计</div>
+              <div class="value" id="weekTotalTicket">0</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      container.innerHTML = html;
+
+      loadWeekData();
+      updateWeekTotals();
+    }
+
+    // 生成周数据输入框
+    function generateWeekInputs(type, isAdmin) {
+      const now = new Date();
+      const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - (dayOfWeek - 1));
+      monday.setHours(0, 0, 0, 0);
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      let html = '';
+      for (let i = 0; i < 7; i++) {
+        const day = new Date(monday);
+        day.setDate(monday.getDate() + i);
+
+        const isPast = day < today;
+        const isToday = day.getTime() === today.getTime();
+        const isFuture = day > today;
+
+        let disabled = '';
+        if (isFuture) {
+          disabled = 'disabled';
+        } else if (isPast && !isAdmin) {
+          disabled = 'disabled';
+        }
+
+        const inputId = `week${type.charAt(0).toUpperCase() + type.slice(1)}${i + 1}`;
+        html += `<td><input type="number" id="${inputId}" min="0" ${disabled} onchange="updateWeekData('${type}', ${i}, this.value)"></td>`;
+      }
+      return html;
+    }
+
+    // 加载周数据
+    function loadWeekData() {
+      const userId = state.currentUser.id;
+      const now = new Date();
+      const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - (dayOfWeek - 1));
+      monday.setHours(0, 0, 0, 0);
+
+      ['ticket', 'order', 'invite'].forEach(type => {
+        for (let i = 0; i < 7; i++) {
+          const day = new Date(monday);
+          day.setDate(monday.getDate() + i);
+          const dateStr = day.toISOString().split('T')[0];
+
+          const key = `week_${userId}_${type}_${dateStr}`;
+          const value = localStorage.getItem(key);
+          if (value) {
+            const input = document.getElementById(`week${type.charAt(0).toUpperCase() + type.slice(1)}${i + 1}`);
+            if (input) input.value = value;
+          }
+        }
+      });
+    }
+
+    // 更新周数据
+    function updateWeekData(type, dayIndex, value) {
+      const userId = state.currentUser.id;
+      const now = new Date();
+      const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - (dayOfWeek - 1));
+      monday.setHours(0, 0, 0, 0);
+
+      const day = new Date(monday);
+      day.setDate(monday.getDate() + dayIndex);
+      const dateStr = day.toISOString().split('T')[0];
+
+      const key = `week_${userId}_${type}_${dateStr}`;
+      if (value && value > 0) {
+        localStorage.setItem(key, value);
+      } else {
+        localStorage.removeItem(key);
+      }
+
+      updateWeekTotals();
+      renderTeamSummaryColumn();
+    }
+
+    // 更新周合计
+    function updateWeekTotals() {
+      ['ticket', 'order', 'invite'].forEach(type => {
+        let total = 0;
+        for (let i = 0; i < 7; i++) {
+          const input = document.getElementById(`week${type.charAt(0).toUpperCase() + type.slice(1)}${i + 1}`);
+          total += parseInt(input.value) || 0;
+        }
+        const el = document.getElementById(`weekTotal${type.charAt(0).toUpperCase() + type.slice(1)}`);
+        if (el) el.textContent = total;
+      });
+    }
+
+    function getRateClass(rate) {
+      if (rate >= 1) return 'high';
+      if (rate >= 0.5) return 'mid';
+      return 'low';
+    }
+
+    function getRateText(rate) {
+      if (rate <= 0) return '-';
+      return Math.round(rate * 100) + '%';
+    }
+
+    function updateMyTarget(key, value) {
+      if (!state.currentUser) return;
+      if (!state.currentUser.isAdmin) {
+        showToast('只有管理员可以修改目标', 'error');
+        return;
+      }
+      const targets = getUserTargets(state.currentUser.id);
+      targets[key] = parseInt(value) || 0;
+      saveData();
+      renderTargetColumn();
+    }
+
+    // 渲染积分栏
+    function renderPointsColumn() {
+      const container = document.getElementById('pointsColumn');
+      if (!state.currentUser) {
+        container.innerHTML = '<div class="empty-state"><p>请先登录</p></div>';
+        return;
+      }
+
+      const today = new Date().toDateString();
+      const todayRecords = state.records.filter(r =>
+        r.userId === state.currentUser.id && new Date(r.date).toDateString() === today
+      );
+
+      // 计算总积分
+      const allRecords = state.records.filter(r => r.userId === state.currentUser.id);
+      const totalPoints = allRecords.reduce((sum, r) => sum + r.points, 0);
+      const totalTodayPoints = todayRecords.reduce((sum, r) => sum + r.points, 0);
+
+      // 计算本周一到周日的数据
+      const now = new Date();
+      const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - (dayOfWeek - 1));
+      monday.setHours(0, 0, 0, 0);
+
+      // 计算当前星期中文名称
+      const weekDayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+      const currentDayName = weekDayNames[dayOfWeek - 1];
+
+      const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+      const weekElementTypes = ['call', 'mass', 'invite', 'test', 'ticket', 'delivery'];
+
+      // 计算本周每天的各项目数据
+      const weekData = {};
+      weekElementTypes.forEach(type => {
+        weekData[type] = [];
+        for (let i = 0; i < 7; i++) {
+          const day = new Date(monday);
+          day.setDate(monday.getDate() + i);
+          const dayStr = day.toDateString();
+          const dayRecords = state.records.filter(r =>
+            r.userId === state.currentUser.id &&
+            new Date(r.date).toDateString() === dayStr &&
+            r.elementType === type
+          );
+          weekData[type].push(dayRecords.reduce((sum, r) => sum + r.value, 0));
+        }
+      });
+
+      // 计算每个项目的周合计
+      const weekTotals = {};
+      weekElementTypes.forEach(type => {
+        weekTotals[type] = weekData[type].reduce((sum, v) => sum + v, 0);
+      });
+
+      let html = `
+        <div class="week-points-section">
+          <div class="week-points-title">📊 本周积分统计 (周一~周日)</div>
+          <table class="week-points-table">
+            <thead>
+              <tr>
+                <th>项目</th>
+                <th>周一</th>
+                <th>周二</th>
+                <th>周三</th>
+                <th>周四</th>
+                <th>周五</th>
+                <th>周六</th>
+                <th>周日</th>
+                <th>合计</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      const elementNames = {
+        call: '呼出',
+        mass: '群发',
+        invite: '邀约',
+        test: '试驾',
+        ticket: '门票',
+        delivery: '交付'
+      };
+
+      weekElementTypes.forEach(type => {
+        html += `<tr><td class="item-name">${elementNames[type]}</td>`;
+        for (let i = 0; i < 7; i++) {
+          html += `<td>${weekData[type][i] || '-'}</td>`;
+        }
+        html += `<td class="total">${weekTotals[type] || '-'}</td></tr>`;
+      });
+
+      html += `
+            </tbody>
+          </table>
+        </div>
+
+        <div class="day-form">
+          <div class="day-form-title">✏️ 今日上报（${currentDayName}）</div>
+          <table class="mini-points-table">
+            <thead>
+              <tr>
+                <th>项目</th>
+                <th>规则</th>
+                <th>数量</th>
+                <th>积分</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      // 使用可配置的积分规则
+      const rules = state.rules || ELEMENTS;
+      rules.forEach(el => {
+        const val = state.values[el.type] || '';
+        let points = 0;
+        const value = parseInt(val) || 0;
+
+        // 根据配置计算积分
+        if (el.pointsPerUnit > 1) {
+          // X分/Y个 格式：每Y个得X分
+          points = Math.floor(value / el.pointsPerUnit);
+        } else {
+          // 1分/X个 格式：每X个得1分
+          points = Math.round(value * el.pointsPerUnit);
+        }
+        
+        // 如果有上限
+        if (el.maxPoints && el.maxPoints > 0) {
+          points = Math.min(points, el.maxPoints);
+        }
+
+        // 生成规则显示文本
+        let ruleText = '';
+        if (el.pointsPerUnit >= 1) {
+          ruleText = `${el.pointsPerUnit}分/${el.unit}`;
+        } else {
+          ruleText = `${el.pointsPerUnit}分/${el.unit}`;
+        }
+        if (el.maxPoints && el.maxPoints > 0) {
+          ruleText += ` (上限${el.maxPoints}分)`;
+        }
+
+        html += `
+          <tr>
+            <td>${el.name}</td>
+            <td class="rule">${ruleText}</td>
+            <td><input type="number" data-type="${el.type}" placeholder="0" min="0" value="${val}" oninput="onPointsChange('${el.type}', this.value)"></td>
+            <td class="points-cell">+${points}</td>
+          </tr>
+        `;
+      });
+
+      html += `
+            </tbody>
+          </table>
+          <div class="target-summary">
+            <div class="label">今日已得积分</div>
+            <div class="value achieved">+${totalTodayPoints}</div>
+          </div>
+        </div>
+      `;
+
+      container.innerHTML = html;
+    }
+
+    function onPointsChange(type, value) {
+      state.values[type] = value;
+      renderPointsColumn();
+      updateSubmitBtn();
+    }
+
+    function updateSubmitBtn() {
+      let total = 0;
+      const rules = state.rules || ELEMENTS;
+      rules.forEach(el => {
+        const value = parseInt(state.values[el.type]) || 0;
+        if (value <= 0) return;
+        
+        let points = 0;
+        // 根据配置计算积分
+        if (el.pointsPerUnit > 1) {
+          points = Math.floor(value / el.pointsPerUnit);
+        } else {
+          points = Math.round(value * el.pointsPerUnit);
+        }
+        // 如果有上限
+        if (el.maxPoints && el.maxPoints > 0) {
+          points = Math.min(points, el.maxPoints);
+        }
+        total += points;
+      });
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = total === 0;
+      btn.querySelector('.total').textContent = '+' + total + ' 积分';
+    }
+
+    // 提交
+    function submitAll() {
+      const today = new Date().toDateString();
+      const todayRecords = state.records.filter(r =>
+        r.userId === state.currentUser.id && new Date(r.date).toDateString() === today
+      );
+
+      let totalPoints = 0;
+      const rules = state.rules || ELEMENTS;
+      rules.forEach(el => {
+        const value = parseInt(state.values[el.type]) || 0;
+        if (value <= 0) return;
+        
+        let points = 0;
+        // 根据配置计算积分
+        if (el.pointsPerUnit > 1) {
+          points = Math.floor(value / el.pointsPerUnit);
+        } else {
+          points = Math.round(value * el.pointsPerUnit);
+        }
+        // 如果有上限
+        if (el.maxPoints && el.maxPoints > 0) {
+          points = Math.min(points, el.maxPoints);
+        }
+        
+        if (points > 0) {
+          const record = {
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+            userId: state.currentUser.id,
+            elementType: el.type,
+            value: value,
+            points: points,
+            date: new Date().toISOString()
+          };
+          state.records.push(record);
+          totalPoints += points;
+        }
+      });
+
+      if (totalPoints > 0) {
+        saveData();
+        showToast('提交成功 +' + totalPoints + ' 积分', 'success');
+        state.values = {};
+        renderTeamSummaryColumn();
+        renderTargetColumn();
+        renderPointsColumn();
+        updateBanner();
+      }
+    }
+
+    // 更新顶部 banner
+    function updateBanner() {
+      if (!state.currentUser) return;
+
+      // 计算所有用户的积分
+      const userPoints = {};
+      state.users.forEach(u => {
+        userPoints[u.id] = state.records
+          .filter(r => r.userId === u.id)
+          .reduce((sum, r) => sum + r.points, 0);
+      });
+
+      // 按积分排序
+      const sorted = [...state.users]
+        .map(u => ({ ...u, points: userPoints[u.id] || 0 }))
+        .sort((a, b) => b.points - a.points);
+
+      // 渲染排行榜
+      const rankingList = document.getElementById('rankingList');
+      if (rankingList && sorted.length > 0) {
+        let html = '';
+
+        // 冠军（第一名）
+        if (sorted[0]) {
+          const champion = sorted[0];
+          const championClass = champion.id === state.currentUser.id ? 'champion current' : 'champion';
+          html += `
+            <div class="ranking-item ${championClass}">
+              <div class="champion-header">
+                <span class="champion-icon">🏆</span>
+                <span class="champion-label">冠军</span>
+              </div>
+              <span class="rank">${champion.name}</span>
+              <span class="champion-points">${champion.points}</span>
+            </div>
+          `;
+        }
+
+        // 亚军（第二名）
+        if (sorted[1]) {
+          const runnerUp = sorted[1];
+          const runnerUpClass = runnerUp.id === state.currentUser.id ? 'runner-up current' : 'runner-up';
+          html += `
+            <div class="ranking-item ${runnerUpClass}">
+              <span class="runner-up-icon">🥈</span>
+              <span class="runner-up-label">亚军</span>
+              <span class="name">${runnerUp.name}</span>
+              <span class="points">${runnerUp.points}</span>
+            </div>
+          `;
+        }
+
+        // 季军（第三名）
+        if (sorted[2]) {
+          const third = sorted[2];
+          const thirdClass = third.id === state.currentUser.id ? 'third-place current' : 'third-place';
+          html += `
+            <div class="ranking-item ${thirdClass}">
+              <span class="third-place-icon">🥉</span>
+              <span class="third-place-label">季军</span>
+              <span class="name">${third.name}</span>
+              <span class="points">${third.points}</span>
+            </div>
+          `;
+        }
+
+        // 其他排名（第4名及以后）
+        for (let i = 3; i < sorted.length; i++) {
+          const user = sorted[i];
+          const rank = i + 1;
+          const otherClass = user.id === state.currentUser.id ? 'other-rank current' : 'other-rank';
+          html += `
+            <div class="ranking-item ${otherClass}">
+              <span class="other-rank-label">第${rank}名</span>
+              <span class="name">${user.name}</span>
+              <span class="points">${user.points}</span>
+            </div>
+          `;
+        }
+
+        rankingList.innerHTML = html;
+      }
+    }
+
+    // 验证登录
+    function verifyLogin() {
+      const phone = document.getElementById('phone').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!phone || phone.length !== 11) {
+        showToast('请输入正确的手机号', 'error');
+        return;
+      }
+
+      if (!password) {
+        showToast('请输入密码', 'error');
+        return;
+      }
+
+      if (password !== '123456') {
+        showToast('密码错误', 'error');
+        return;
+      }
+
+      // 检查是否已注册
+      const existingUser = state.users.find(u => u.phone === phone);
+      if (existingUser) {
+        // 只有手机号 13829218486 是管理员
+        existingUser.isAdmin = (phone === '13829218486');
+        state.currentUser = existingUser;
+        localStorage.setItem('point_current_user', JSON.stringify(existingUser));
+        showToast('登录成功', 'success');
+        showApp();
+        return;
+      }
+
+      // 检查是否在预注册列表中
+      const preRegistered = state.users.find(u => u.phone === phone && !u.registered);
+      if (preRegistered) {
+        // 预注册用户，直接激活
+        preRegistered.registered = true;
+        preRegistered.isAdmin = (phone === '13829218486');
+        state.currentUser = preRegistered;
+        saveData();
+        localStorage.setItem('point_current_user', JSON.stringify(preRegistered));
+        showToast('激活成功', 'success');
+        showApp();
+        return;
+      }
+
+      // 新用户，需要填写姓名
+      state.pendingPhone = phone;
+      document.getElementById('step1').style.display = 'none';
+      document.getElementById('step2').style.display = 'block';
+      showToast('验证成功，请填写姓名', 'success');
+    }
+
+    function completeRegister() {
+      const name = document.getElementById('realName').value.trim();
+      if (!name) {
+        showToast('请输入真实姓名', 'error');
+        return;
+      }
+      const newUser = {
+        id: Date.now().toString(),
+        phone: state.pendingPhone,
+        name: name,
+        createdAt: new Date().toISOString()
+      };
+      state.users.push(newUser);
+      state.currentUser = newUser;
+      saveData();
+      localStorage.setItem('point_current_user', JSON.stringify(newUser));
+      showToast('注册成功', 'success');
+      showApp();
+    }
+
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = 'toast ' + type + ' show';
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function openAdminModal() {
+      renderMemberList();
+      renderTargetSettings();
+      renderRulesSettings();
+      document.getElementById('adminModal').classList.add('show');
+    }
+
+    function closeAdminModal() {
+      document.getElementById('adminModal').classList.remove('show');
+    }
+
+    // 打开扫码参与弹窗
+    function openQRModal() {
+      const container = document.getElementById('qrImageContainer');
+      const urlText = document.getElementById('qrUrlText');
+
+      // 获取当前页面URL
+      const pageUrl = window.location.href;
+
+      // 使用公共二维码服务生成二维码图片
+      const qrSize = 300;
+      const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(pageUrl)}`;
+
+      container.innerHTML = `<img src="${qrImageUrl}" alt="参与二维码" style="width: ${qrSize}px; height: ${qrSize}px; display: block;">`;
+      urlText.textContent = pageUrl;
+
+      document.getElementById('qrModal').classList.add('show');
+    }
+
+    // 关闭扫码参与弹窗
+    function closeQRModal() {
+      document.getElementById('qrModal').classList.remove('show');
+    }
+
+    // 复制链接到剪贴板
+    function copyQRUrl() {
+      const pageUrl = window.location.href;
+      const tempInput = document.createElement('textarea');
+      tempInput.value = pageUrl;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      try {
+        document.execCommand('copy');
+        showToast('链接已复制，可以分享给其他成员', 'success');
+      } catch (err) {
+        showToast('复制失败，请手动复制', 'error');
+      }
+      document.body.removeChild(tempInput);
+    }
+
+    function renderMemberList() {
+      const list = document.getElementById('memberList');
+      document.getElementById('memberCount').textContent = state.users.length;
+      if (state.users.length === 0) {
+        list.innerHTML = '<div class="empty-members">暂无成员，请添加</div>';
+        return;
+      }
+      list.innerHTML = state.users.map(user => {
+        const targets = getUserTargets(user.id);
+        return `
+        <div class="member-item">
+          <div class="avatar">${user.name.charAt(0)}</div>
+          <div class="info">
+            <div class="name">${user.name}</div>
+            <div class="phone">${user.phone}</div>
+            <div class="targets" style="font-size:11px;color:#6b7280;margin-top:4px;">
+              目标: 订单${targets.orderTarget} 邀约${targets.inviteTarget} 门票${targets.ticketTarget}
+            </div>
+          </div>
+          <button class="delete-btn" onclick="deleteMember('${user.id}')">×</button>
+        </div>
+      `;
+      }).join('');
+    }
+
+    // 渲染目标设置区域
+    function renderTargetSettings() {
+      const container = document.getElementById('targetSettings');
+      const nonAdminUsers = state.users.filter(u => !(u.name === '成林涛' && u.phone === '13829218486'));
+
+      if (nonAdminUsers.length === 0) {
+        container.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">暂无成员，请先添加成员</div>';
+        return;
+      }
+
+      let html = '<div class="target-settings-list">';
+
+      nonAdminUsers.forEach(user => {
+        const targets = getUserTargets(user.id);
+        html += `
+          <div class="target-settings-item">
+            <div class="user-name">${user.name}</div>
+            <div class="target-inputs">
+              <div class="target-input-group">
+                <label>订单目标</label>
+                <input type="number" min="0" value="${targets.orderTarget || ''}" 
+                  onchange="updateMemberTarget('${user.id}', 'orderTarget', this.value)">
+              </div>
+              <div class="target-input-group">
+                <label>邀约目标</label>
+                <input type="number" min="0" value="${targets.inviteTarget || ''}" 
+                  onchange="updateMemberTarget('${user.id}', 'inviteTarget', this.value)">
+              </div>
+              <div class="target-input-group">
+                <label>门票目标</label>
+                <input type="number" min="0" value="${targets.ticketTarget || ''}" 
+                  onchange="updateMemberTarget('${user.id}', 'ticketTarget', this.value)">
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    // 渲染积分规则配置
+    function renderRulesSettings() {
+      const container = document.getElementById('rulesSettings');
+
+      let html = '<div class="rules-settings-list">';
+      html += '<div class="rules-settings-info" style="font-size:11px;color:#6b7280;margin-bottom:10px;">示例：1分/个 表示每1个得1分，50分/批 表示每批得50分</div>';
+
+      state.rules.forEach((rule, index) => {
+        // 计算显示格式：如果 pointsPerUnit >= 1，则是 X分/Y个；如果是小数如0.1，则是 1分/10个
+        let displayPoints, displayDivisor;
+        if (rule.pointsPerUnit >= 1) {
+          displayPoints = rule.pointsPerUnit;
+          displayDivisor = 1;
+        } else {
+          displayPoints = 1;
+          displayDivisor = Math.round(1 / rule.pointsPerUnit);
+        }
+
+        html += `
+          <div class="rule-settings-item">
+            <div class="rule-settings-header">
+              <input type="text" class="rule-name-input" value="${rule.name}" 
+                placeholder="项目名称" onchange="updateRuleName(${index}, this.value)">
+              <button class="rule-delete-btn" onclick="deleteRule(${index})">🗑️</button>
+            </div>
+            <div class="rule-settings-body">
+              <div class="rule-input-row">
+                <input type="number" min="1" value="${displayPoints}" class="rule-points-input"
+                  onchange="updateRulePoints(${index}, this.value, ${displayDivisor})">
+                <span class="rule-label">分/</span>
+                <input type="number" min="1" value="${displayDivisor}" class="rule-unit-qty-input"
+                  onchange="updateRulePoints(${index}, ${displayPoints}, this.value)">
+                <input type="text" value="${rule.unit}" class="rule-unit-input" 
+                  placeholder="个/批/人" onchange="updateRuleUnit(${index}, this.value)">
+              </div>
+              <div class="rule-preview">预览：${displayPoints}分/${displayDivisor}${rule.unit}</div>
+            </div>
+          </div>
+        `;
+      });
+
+      html += `
+        <button class="add-rule-btn" onclick="addNewRule()">➕ 添加新项目</button>
+      `;
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    // 更新项目名称
+    function updateRuleName(index, value) {
+      state.rules[index].name = value;
+      saveRules();
+      renderRulesSettings();
+    }
+
+    // 更新积分规则（点数和除数）
+    function updateRulePoints(index, points, divisor) {
+      const pointsVal = parseFloat(points) || 1;
+      const divisorVal = parseInt(divisor) || 1;
+      state.rules[index].pointsPerUnit = pointsVal / divisorVal;
+      saveRules();
+      renderRulesSettings();
+      showToast('规则已更新', 'success');
+      if (document.getElementById('pointsColumn')) {
+        renderPointsColumn();
+      }
+    }
+
+    // 更新单位
+    function updateRuleUnit(index, value) {
+      state.rules[index].unit = value;
+      saveRules();
+      renderRulesSettings();
+    }
+
+    // 添加新规则
+    function addNewRule() {
+      const newRule = {
+        type: 'custom_' + Date.now(),
+        name: '新项目',
+        unit: '个',
+        pointsPerUnit: 1,
+        maxPoints: 0
+      };
+      state.rules.push(newRule);
+      saveRules();
+      renderRulesSettings();
+      showToast('已添加新项目', 'success');
+    }
+
+    // 删除规则
+    function deleteRule(index) {
+      if (state.rules.length <= 1) {
+        showToast('至少保留一个项目', 'error');
+        return;
+      }
+      state.rules.splice(index, 1);
+      saveRules();
+      renderRulesSettings();
+      showToast('已删除项目', 'success');
+      if (document.getElementById('pointsColumn')) {
+        renderPointsColumn();
+      }
+    }
+
+    // 更新成员目标
+    function updateMemberTarget(userId, targetType, value) {
+      const targets = getUserTargets(userId);
+      targets[targetType] = parseInt(value) || 0;
+      saveData();
+      showToast('目标已更新', 'success');
+      renderTeamSummaryColumn();
+      renderTargetColumn();
+      renderMemberList();
+    }
+
+    // 导出数据
+    function exportData(type) {
+      const now = new Date();
+      const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - (dayOfWeek - 1));
+      monday.setHours(0, 0, 0, 0);
+
+      let csvContent = '';
+
+      if (type === 'week') {
+        // 本周数据
+        const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+        csvContent = '姓名,类型,' + weekDays.join(',') + ',合计\n';
+
+        state.users.forEach(user => {
+          if (user.name === '成林涛' && user.phone === '13829218486') return;
+
+          ['订单', '邀约', '门票'].forEach(itemType => {
+            const typeKey = itemType === '订单' ? 'order' : itemType === '邀约' ? 'invite' : 'ticket';
+            const values = [];
+            let total = 0;
+
+            for (let i = 0; i < 7; i++) {
+              const day = new Date(monday);
+              day.setDate(monday.getDate() + i);
+              const dateStr = day.toISOString().split('T')[0];
+              const key = `week_${user.id}_${typeKey}_${dateStr}`;
+              const val = parseInt(localStorage.getItem(key)) || 0;
+              values.push(val);
+              total += val;
+            }
+
+            csvContent += `${user.name},${itemType},` + values.join(',') + `,${total}\n`;
+          });
+        });
+      } else {
+        // 全部数据 - 积分记录
+        csvContent = '日期,时间,姓名,项目,数量,积分\n';
+
+        state.records.forEach(record => {
+          const user = state.users.find(u => u.id === record.userId);
+          const userName = user ? user.name : '未知';
+          const date = new Date(record.date);
+          const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+          const timeStr = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+          const rules = state.rules || ELEMENTS;
+          const element = rules.find(el => el.type === record.elementType);
+          const elementName = element ? element.name : record.elementType;
+
+          csvContent += `${dateStr},${timeStr},${userName},${elementName},${record.value},${record.points}\n`;
+        });
+
+        // 添加目标达成数据
+        csvContent += '\n目标达成数据\n';
+        csvContent += '姓名,类型,目标,达成,达成率\n';
+        state.users.forEach(user => {
+          if (user.name === '成林涛' && user.phone === '13829218486') return;
+          const targets = getUserTargets(user.id);
+          ['订单', '邀约', '门票'].forEach(itemType => {
+            const targetKey = itemType === '订单' ? 'orderTarget' : itemType === '邀约' ? 'inviteTarget' : 'ticketTarget';
+            const achieveKey = itemType === '订单' ? 'orderAchieve' : itemType === '邀约' ? 'inviteAchieve' : 'ticketAchieve';
+            const target = targets[targetKey] || 0;
+            const achieve = targets[achieveKey] || 0;
+            const rate = target > 0 ? Math.round((achieve / target) * 100) + '%' : '-';
+            csvContent += `${user.name},${itemType},${target},${achieve},${rate}\n`;
+          });
+        });
+      }
+
+      // 下载文件
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      const fileName = type === 'week'
+        ? `本周数据_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.csv`
+        : `全部数据_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.csv`;
+      link.setAttribute('download', fileName);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      showToast('数据导出成功', 'success');
+    }
+
+    function addMember() {
+      const name = document.getElementById('newMemberName').value.trim();
+      const phone = document.getElementById('newMemberPhone').value.trim();
+      if (!name) { showToast('请输入姓名', 'error'); return; }
+      if (!phone || phone.length !== 11) { showToast('请输入正确的手机号', 'error'); return; }
+      if (state.users.some(u => u.phone === phone)) { showToast('该手机号已存在', 'error'); return; }
+
+      const newUser = {
+        id: Date.now().toString(),
+        phone: phone,
+        name: name,
+        registered: false,
+        createdAt: new Date().toISOString()
+      };
+      state.users.push(newUser);
+      // 初始化目标数据
+      state.targets[newUser.id] = {
+        orderTarget: 0,
+        inviteTarget: 0,
+        ticketTarget: 0,
+        orderAchieve: 0,
+        inviteAchieve: 0,
+        ticketAchieve: 0
+      };
+      saveData();
+      document.getElementById('newMemberName').value = '';
+      document.getElementById('newMemberPhone').value = '';
+      renderMemberList();
+      showToast('添加成功', 'success');
+    }
+
+    function deleteMember(userId) {
+      if (!confirm('确定要删除该成员吗？')) return;
+      state.users = state.users.filter(u => u.id !== userId);
+      state.records = state.records.filter(r => r.userId !== userId);
+      delete state.targets[userId];
+      saveData();
+      if (state.currentUser && state.currentUser.id === userId) {
+        state.currentUser = null;
+        localStorage.removeItem('point_current_user');
+        closeAdminModal();
+        showLogin();
+        return;
+      }
+      renderMemberList();
+      updateBanner();
+      showToast('删除成功', 'success');
+    }
+
+    init();
+  </script>
+</body>
+</html>
