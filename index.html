@@ -1520,6 +1520,83 @@
     .add-rule-btn:hover {
       opacity: 0.9;
     }
+
+    /* 移动端优化 - 手机竖屏 */
+    @media (max-width: 480px) {
+      body { font-size: 14px; }
+      .login-card { padding: 24px 16px; max-width: 340px; }
+      .login-logo h1 { font-size: 22px; }
+      .login-logo p { font-size: 12px; }
+      .form-group input { padding: 12px; font-size: 15px; }
+      .btn-primary { padding: 14px; font-size: 15px; }
+
+      .app-container { padding-bottom: 60px; }
+      .header { padding: 12px; }
+      .header-top { flex-wrap: wrap; gap: 8px; }
+      .user-avatar { width: 36px; height: 36px; font-size: 15px; }
+      .user-details h3 { font-size: 13px; }
+      .user-details p { font-size: 11px; }
+      .header-btn { padding: 6px 8px; font-size: 11px; }
+      .header-actions { gap: 4px; }
+
+      .main-title { font-size: 18px; }
+      .title-input { font-size: 16px; padding: 8px 12px; }
+
+      .ranking-section { padding: 10px; margin-bottom: 10px; }
+      .ranking-title { font-size: 13px; margin-bottom: 8px; }
+      .ranking-list { padding: 8px; gap: 6px; max-height: 220px; }
+      .ranking-item { padding: 6px 10px; font-size: 11px; gap: 6px; }
+      .ranking-item.champion { padding: 12px; font-size: 12px; }
+      .ranking-item.champion .champion-icon { font-size: 18px; }
+      .ranking-item.champion .champion-points { font-size: 16px; }
+
+      .top-columns { padding: 10px; gap: 10px; }
+      .top-column { padding: 10px; }
+      .column-title { font-size: 13px; margin-bottom: 8px; }
+
+      table { font-size: 10px; }
+      th, td { padding: 5px 4px; }
+      .week-data-table th, .week-data-table td { padding: 4px 3px; font-size: 9px; }
+
+      .points-page { padding: 0 10px; }
+      .target-column-section, .points-column-section { padding: 10px; margin-bottom: 10px; }
+      .section-title { font-size: 13px; margin-bottom: 8px; padding-bottom: 6px; }
+
+      .data-table th, .data-table td { padding: 6px 4px; font-size: 10px; }
+      .data-table input[type="number"] { padding: 4px 6px; font-size: 11px; }
+
+      .team-summary-section { padding: 10px; margin-bottom: 10px; }
+      .team-summary-section .section-title { font-size: 13px; margin-bottom: 8px; }
+
+      .modal-content { width: 95%; max-width: 400px; padding: 16px; max-height: 90vh; }
+      .modal-header h3 { font-size: 16px; }
+      .modal-section { padding: 10px 0; }
+      .modal-section h4 { font-size: 13px; margin-bottom: 8px; }
+
+      .input-group { gap: 6px; margin-bottom: 10px; }
+      .input-group input[type="text"], .input-group input[type="number"] {
+        padding: 8px 10px; font-size: 13px;
+      }
+      .btn-secondary { padding: 8px 12px; font-size: 12px; }
+      .btn-danger { padding: 6px 10px; font-size: 11px; }
+
+      .label { font-size: 11px; }
+      .empty-state { padding: 15px; font-size: 12px; }
+
+      .toast { font-size: 13px; padding: 10px 16px; max-width: 280px; }
+
+      .qr-modal-content { padding: 16px; max-width: 320px; }
+      .qr-url-copy { font-size: 11px; padding: 10px; }
+      .qr-copy-btn { padding: 10px; font-size: 13px; }
+    }
+
+    /* 更小屏幕优化 */
+    @media (max-width: 360px) {
+      .ranking-list { max-height: 180px; }
+      .ranking-item.champion { padding: 10px; font-size: 11px; }
+      .week-data-table th, .week-data-table td { font-size: 8px; padding: 3px 2px; }
+      .data-table th, .data-table td { font-size: 9px; padding: 4px 3px; }
+    }
   </style>
 </head>
 <body>
@@ -1550,7 +1627,7 @@
           <label>真实姓名</label>
           <input type="text" id="realName" placeholder="请输入真实姓名">
         </div>
-        <button class="btn-primary" onclick="completeRegister()">完成注册</button>
+        <button class="btn-primary">完成注册</button>
       </div>
     </div>
   </div>
@@ -1568,7 +1645,7 @@
         </div>
         <div class="header-actions">
           <button class="header-btn" onclick="openQRModal()">📱 扫码参与</button>
-          <button class="header-btn" onclick="openAdminModal()">⚙️ 管理</button>
+          <button class="header-btn" onclick="openAdminModal()" id="adminBtn">⚙️ 管理</button>
         </div>
       </div>
     </div>
@@ -1732,7 +1809,7 @@
       if (state.users.length === 0) {
         state.users.push({
           id: 'admin',
-          phone: '13829218486',
+          phone: '1382198486',
           name: '成林涛',
           isAdmin: true,
           createdAt: new Date().toISOString()
@@ -1749,6 +1826,10 @@
 
     function saveRules() {
       localStorage.setItem('point_rules', JSON.stringify(state.rules));
+    }
+
+    function isCurrentUserAdmin() {
+      return state.currentUser && state.currentUser.isAdmin === true;
     }
 
     function checkAuth() {
@@ -1897,6 +1978,14 @@
       document.getElementById('userName').textContent = state.currentUser.name;
       document.getElementById('userAvatar').textContent = state.currentUser.name.charAt(0);
       document.getElementById('userPhone').textContent = state.currentUser.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
+      const adminBtn = document.getElementById('adminBtn');
+      if (adminBtn) {
+        if (state.currentUser.isAdmin) {
+          adminBtn.style.display = '';
+        } else {
+          adminBtn.style.display = 'none';
+        }
+      }
     }
 
     // 获取用户目标数据
@@ -2568,11 +2657,11 @@
         return;
       }
 
-      // 检查是否已注册
+      // 检查手机号是否在 state.users 列表中
       const existingUser = state.users.find(u => u.phone === phone);
       if (existingUser) {
-        // 只有手机号 13829218486 是管理员
-        existingUser.isAdmin = (phone === '13829218486');
+        // 已存在用户，设置 isAdmin，登录成功
+        existingUser.isAdmin = (phone === '1382198486');
         state.currentUser = existingUser;
         localStorage.setItem('point_current_user', JSON.stringify(existingUser));
         showToast('登录成功', 'success');
@@ -2580,45 +2669,8 @@
         return;
       }
 
-      // 检查是否在预注册列表中
-      const preRegistered = state.users.find(u => u.phone === phone && !u.registered);
-      if (preRegistered) {
-        // 预注册用户，直接激活
-        preRegistered.registered = true;
-        preRegistered.isAdmin = (phone === '13829218486');
-        state.currentUser = preRegistered;
-        saveData();
-        localStorage.setItem('point_current_user', JSON.stringify(preRegistered));
-        showToast('激活成功', 'success');
-        showApp();
-        return;
-      }
-
-      // 新用户，需要填写姓名
-      state.pendingPhone = phone;
-      document.getElementById('step1').style.display = 'none';
-      document.getElementById('step2').style.display = 'block';
-      showToast('验证成功，请填写姓名', 'success');
-    }
-
-    function completeRegister() {
-      const name = document.getElementById('realName').value.trim();
-      if (!name) {
-        showToast('请输入真实姓名', 'error');
-        return;
-      }
-      const newUser = {
-        id: Date.now().toString(),
-        phone: state.pendingPhone,
-        name: name,
-        createdAt: new Date().toISOString()
-      };
-      state.users.push(newUser);
-      state.currentUser = newUser;
-      saveData();
-      localStorage.setItem('point_current_user', JSON.stringify(newUser));
-      showToast('注册成功', 'success');
-      showApp();
+      // 不存在的手机号
+      showToast('无效号码，请联系管理员添加', 'error');
     }
 
     function showToast(message, type = 'info') {
@@ -2629,6 +2681,10 @@
     }
 
     function openAdminModal() {
+      if (!isCurrentUserAdmin()) {
+        showToast('无权限访问', 'error');
+        return;
+      }
       renderMemberList();
       renderTargetSettings();
       renderRulesSettings();
@@ -2706,7 +2762,7 @@
     // 渲染目标设置区域
     function renderTargetSettings() {
       const container = document.getElementById('targetSettings');
-      const nonAdminUsers = state.users.filter(u => !(u.name === '成林涛' && u.phone === '13829218486'));
+      const nonAdminUsers = state.users.filter(u => !(u.name === '成林涛' && u.phone === '1382198486'));
 
       if (nonAdminUsers.length === 0) {
         container.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">暂无成员，请先添加成员</div>';
@@ -2877,7 +2933,7 @@
         csvContent = '姓名,类型,' + weekDays.join(',') + ',合计\n';
 
         state.users.forEach(user => {
-          if (user.name === '成林涛' && user.phone === '13829218486') return;
+          if (user.name === '成林涛' && user.phone === '1382198486') return;
 
           ['订单', '邀约', '门票'].forEach(itemType => {
             const typeKey = itemType === '订单' ? 'order' : itemType === '邀约' ? 'invite' : 'ticket';
@@ -2918,7 +2974,7 @@
         csvContent += '\n目标达成数据\n';
         csvContent += '姓名,类型,目标,达成,达成率\n';
         state.users.forEach(user => {
-          if (user.name === '成林涛' && user.phone === '13829218486') return;
+          if (user.name === '成林涛' && user.phone === '1382198486') return;
           const targets = getUserTargets(user.id);
           ['订单', '邀约', '门票'].forEach(itemType => {
             const targetKey = itemType === '订单' ? 'orderTarget' : itemType === '邀约' ? 'inviteTarget' : 'ticketTarget';
