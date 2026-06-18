@@ -2466,8 +2466,6 @@
         return;
       }
       
-      const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.path}`;
-      
       const data = {
         users: state.users,
         records: state.records,
@@ -2477,35 +2475,42 @@
         updatedAt: new Date().toISOString()
       };
 
-      const content = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+      const jsonStr = JSON.stringify(data);
+      const content = btoa(unescape(encodeURIComponent(jsonStr)));
+      
+      const apiBase = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}`;
+      const headers = {
+        'Authorization': `token ${GITHUB_CONFIG.token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      };
 
-      // 先获取当前文件的 sha（更新文件需要）
-      fetch(url + `?ref=${GITHUB_CONFIG.branch}`, {
-        headers: {
-          'Authorization': `token ${GITHUB_CONFIG.token}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      })
+      // 步骤1: 获取当前文件的 sha
+      fetch(`${apiBase}/contents/${GITHUB_CONFIG.path}?ref=${GITHUB_CONFIG.branch}`, { headers })
       .then(response => {
-        if (!response.ok) throw new Error('获取文件信息失败: ' + response.status);
+        if (response.status === 404) {
+          // 文件不存在，创建新文件
+          return { sha: null };
+        }
+        if (!response.ok) throw new Error('获取文件sha失败: ' + response.status);
         return response.json();
       })
       .then(fileInfo => {
-        console.log('获取到文件 sha:', fileInfo.sha);
-        // 更新文件
-        return fetch(url, {
+        const sha = fileInfo.sha;
+        console.log('获取到文件 sha:', sha);
+        
+        // 步骤2: 更新文件
+        const body = {
+          message: '更新积分系统数据 ' + new Date().toLocaleString('zh-CN'),
+          content: content,
+          branch: GITHUB_CONFIG.branch
+        };
+        if (sha) body.sha = sha;
+        
+        return fetch(`${apiBase}/contents/${GITHUB_CONFIG.path}`, {
           method: 'PUT',
-          headers: {
-            'Authorization': `token ${GITHUB_CONFIG.token}`,
-            'Accept': 'application/vnd.github.v3+json',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            message: '更新积分系统数据 ' + new Date().toLocaleString('zh-CN'),
-            content: content,
-            sha: fileInfo.sha,
-            branch: GITHUB_CONFIG.branch
-          })
+          headers: headers,
+          body: JSON.stringify(body)
         });
       })
       .then(response => {
@@ -2513,15 +2518,14 @@
           console.log('✅ 数据已同步到云端');
           showToast('数据已同步到云端', 'success');
         } else {
-          response.json().then(err => {
-            console.error('云端同步失败:', err);
-            showToast('云端同步失败: ' + (err.message || '未知错误'), 'error');
+          return response.json().then(err => {
+            throw new Error(err.message || 'HTTP ' + response.status);
           });
         }
       })
       .catch(error => {
         console.error('云端保存失败:', error.message);
-        showToast('云端保存失败，数据已保存在本地', 'error');
+        showToast('云端保存失败: ' + error.message, 'error');
       });
     }
 
