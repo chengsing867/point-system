@@ -2269,8 +2269,36 @@
     };
 
     function init() {
+      // 检查URL参数中的数据（扫码后导入）
+      importDataFromURL();
       loadData();
       checkAuth();
+    }
+
+    // 从URL参数导入数据（扫码后自动同步）
+    function importDataFromURL() {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const encodedData = urlParams.get('d');
+        if (!encodedData) return;
+
+        const decodedStr = decodeURIComponent(escape(atob(encodedData)));
+        const data = JSON.parse(decodedStr);
+        
+        if (data.shops) {
+          localStorage.setItem('point_shops', JSON.stringify(data.shops));
+        }
+        if (data.users) {
+          localStorage.setItem('point_users', JSON.stringify(data.users));
+        }
+        
+        // 清除URL参数，避免刷新时重复导入
+        history.replaceState(null, '', window.location.pathname);
+        return true;
+      } catch (e) {
+        console.error('导入数据失败:', e);
+        return false;
+      }
     }
 
     function loadData() {
@@ -3962,7 +3990,44 @@
       const urlText = document.getElementById('qrUrlText');
 
       // 获取当前页面URL
-      const pageUrl = window.location.href;
+      let pageUrl = window.location.href.split('?')[0].split('#')[0];
+
+      // 把门店和人员数据编码到URL参数中
+      const shopData = {
+        shops: state.shops,
+        users: state.users,
+        generatedAt: new Date().toISOString()
+      };
+
+      try {
+        // 使用 UTF-8 编码处理中文
+        const jsonStr = JSON.stringify(shopData);
+        const encodedData = encodeURIComponent(btoa(unescape(encodeURIComponent(jsonStr))));
+        
+        // 检查 URL 长度（二维码有容量限制）
+        if (encodedData.length > 4000) {
+          // 数据太长，简化为只包含有效门店和人员
+          const now = new Date();
+          const simplifiedShops = state.shops.filter(shop => {
+            const startOk = !shop.startDate || now >= new Date(shop.startDate);
+            const endOk = !shop.endDate || now <= new Date(shop.endDate);
+            return startOk && endOk;
+          });
+          const simplifiedData = {
+            shops: simplifiedShops,
+            users: state.users,
+            generatedAt: new Date().toISOString()
+          };
+          const simplifiedJson = JSON.stringify(simplifiedData);
+          const simplifiedEncoded = encodeURIComponent(btoa(unescape(encodeURIComponent(simplifiedJson))));
+          pageUrl = pageUrl + '?d=' + simplifiedEncoded;
+        } else {
+          pageUrl = pageUrl + '?d=' + encodedData;
+        }
+      } catch (e) {
+        // 编码失败，使用原始URL
+        console.error('数据编码失败:', e);
+      }
 
       // 清空容器
       container.innerHTML = '';
