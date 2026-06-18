@@ -2282,7 +2282,7 @@
     // 初始化 GitHub Token
     function initGitHubToken() {
       // 优先从 localStorage 获取
-      const savedToken = localStorage.getItem('github_token');
+      const savedToken = safeGetItem('github_token');
       if (savedToken) {
         GITHUB_CONFIG.token = savedToken;
         return true;
@@ -2293,7 +2293,7 @@
     // 设置 GitHub Token（管理员首次使用时调用）
     function setGitHubToken(token) {
       GITHUB_CONFIG.token = token;
-      localStorage.setItem('github_token', token);
+      safeSetItem('github_token', token);
     }
 
     // 保存 GitHub Token（从管理界面输入）
@@ -2340,6 +2340,20 @@
       adminShopId: null
     };
 
+    // 安全的 localStorage 读取（兼容隐私模式/微信内置浏览器）
+    function safeGetItem(key) {
+      try { return localStorage.getItem(key); } catch (e) { return null; }
+    }
+    function safeSetItem(key, value) {
+      try { localStorage.setItem(key, value); } catch (e) { console.warn('localStorage 写入失败:', e.message); }
+    }
+    function safeRemoveItem(key) {
+      try { localStorage.removeItem(key); } catch (e) { console.warn('localStorage 删除失败:', e.message); }
+    }
+    function safeJSONParse(str, fallback) {
+      try { return str ? JSON.parse(str) : fallback; } catch (e) { return fallback; }
+    }
+
     function init() {
       try {
         // 初始化 GitHub Token
@@ -2351,34 +2365,40 @@
           checkAuth();
         } catch (e) {
           console.error('checkAuth 失败，清除登录状态:', e);
-          localStorage.removeItem('point_current_user');
-          localStorage.removeItem('point_current_shop');
+          safeRemoveItem('point_current_user');
+          safeRemoveItem('point_current_shop');
           state.currentUser = null;
           state.currentShop = null;
+          // 确保登录页显示
+          const loginPage = document.getElementById('loginPage');
+          if (loginPage) { loginPage.style.display = 'flex'; loginPage.classList.add('active'); }
         }
       } catch (e) {
         console.error('init 初始化失败:', e);
+        // 确保登录页显示
+        const loginPage = document.getElementById('loginPage');
+        if (loginPage) { loginPage.style.display = 'flex'; loginPage.classList.add('active'); }
       }
       // 延迟加载云端数据，确保登录页先稳定渲染
       setTimeout(() => {
         try { loadCloudData(); } catch (e) { console.error('loadCloudData 失败:', e); }
-      }, 100);
+      }, 200);
     }
 
     // 从本地存储加载数据
     function loadLocalData() {
-      const users = localStorage.getItem('point_users');
-      const records = localStorage.getItem('point_records');
-      const targets = localStorage.getItem('point_targets');
-      const rules = localStorage.getItem('point_rules');
-      const shops = localStorage.getItem('point_shops');
-      state.users = users ? JSON.parse(users) : [];
-      state.records = records ? JSON.parse(records) : [];
-      state.targets = targets ? JSON.parse(targets) : {};
-      state.shops = shops ? JSON.parse(shops) : [];
+      const users = safeGetItem('point_users');
+      const records = safeGetItem('point_records');
+      const targets = safeGetItem('point_targets');
+      const rules = safeGetItem('point_rules');
+      const shops = safeGetItem('point_shops');
+      state.users = safeJSONParse(users, []);
+      state.records = safeJSONParse(records, []);
+      state.targets = safeJSONParse(targets, {});
+      state.shops = safeJSONParse(shops, []);
       
       if (rules) {
-        state.rules = JSON.parse(rules);
+        state.rules = safeJSONParse(rules, JSON.parse(JSON.stringify(ELEMENTS)));
       } else {
         state.rules = JSON.parse(JSON.stringify(ELEMENTS));
       }
@@ -2421,6 +2441,18 @@
       };
       setBtnLoading(true);
 
+      // 超时保护：8秒后无论结果都恢复登录按钮（避免弱网卡死）
+      let finished = false;
+      const timeoutId = setTimeout(() => {
+        if (!finished) {
+          finished = true;
+          console.warn('云端数据加载超时(8s)，使用本地数据');
+          cloudDataLoaded = false;
+          safeCall(updateCloudStatus);
+          setBtnLoading(false);
+        }
+      }, 8000);
+
       const owner = GITHUB_CONFIG.owner, repo = GITHUB_CONFIG.repo, path = GITHUB_CONFIG.path, branch = GITHUB_CONFIG.branch;
       const ts = Date.now();
 
@@ -2433,16 +2465,26 @@
 
       let idx = 0;
       function tryNext() {
+        if (finished) return;
         if (idx >= sources.length) {
+          finished = true;
+          clearTimeout(timeoutId);
           console.log('⚠️ 所有云端数据源均失败，使用本地数据');
           cloudDataLoaded = false;
-          updateCloudStatus();
+          safeCall(updateCloudStatus);
           setBtnLoading(false);
           return;
         }
         const src = sources[idx++];
-        src.fetch()
+        // 每个数据源设置 5 秒超时
+        Promise.race([
+          src.fetch(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('超时')), 5000))
+        ])
           .then(text => {
+            if (finished) return;
+            finished = true;
+            clearTimeout(timeoutId);
             console.log(`✅ [${src.name}] 数据加载成功`);
             applyCloudData(text);
           })
@@ -2501,11 +2543,11 @@
 
     // 保存到本地存储
     function saveLocalData() {
-      localStorage.setItem('point_users', JSON.stringify(state.users));
-      localStorage.setItem('point_records', JSON.stringify(state.records));
-      localStorage.setItem('point_targets', JSON.stringify(state.targets));
-      localStorage.setItem('point_shops', JSON.stringify(state.shops));
-      localStorage.setItem('point_rules', JSON.stringify(state.rules));
+      safeSetItem('point_users', JSON.stringify(state.users));
+      safeSetItem('point_records', JSON.stringify(state.records));
+      safeSetItem('point_targets', JSON.stringify(state.targets));
+      safeSetItem('point_shops', JSON.stringify(state.shops));
+      safeSetItem('point_rules', JSON.stringify(state.rules));
     }
 
     // 保存数据（本地 + 云端）
@@ -2609,22 +2651,33 @@
     }
 
     function checkAuth() {
-      const user = localStorage.getItem('point_current_user');
-      const shop = localStorage.getItem('point_current_shop');
-      if (user) {
-        const parsed = JSON.parse(user);
-        if (parsed && parsed.phone === '13829218486') {
-          parsed.isAdmin = true;
-          parsed.name = '成林涛';
-        }
-        
-        state.currentUser = parsed;
-        if (shop) {
-          state.currentShop = JSON.parse(shop);
-        }
-        state.submitTargetId = null;
-        showApp();
+      const user = safeGetItem('point_current_user');
+      const shop = safeGetItem('point_current_shop');
+      if (!user) return;
+      
+      const parsed = safeJSONParse(user, null);
+      // 严格验证用户数据完整性
+      if (!parsed || !parsed.phone || !parsed.name) {
+        console.warn('登录状态数据不完整，清除');
+        safeRemoveItem('point_current_user');
+        safeRemoveItem('point_current_shop');
+        return;
       }
+      
+      if (parsed.phone === '13829218486') {
+        parsed.isAdmin = true;
+        parsed.name = '成林涛';
+      }
+      
+      state.currentUser = parsed;
+      if (shop) {
+        const parsedShop = safeJSONParse(shop, null);
+        if (parsedShop && parsedShop.id && parsedShop.name) {
+          state.currentShop = parsedShop;
+        }
+      }
+      state.submitTargetId = null;
+      showApp();
     }
 
     function showApp() {
@@ -2661,8 +2714,8 @@
       } catch (e) {
         console.error('showApp 失败:', e);
         // 回退到登录页
-        localStorage.removeItem('point_current_user');
-        localStorage.removeItem('point_current_shop');
+        safeRemoveItem('point_current_user');
+        safeRemoveItem('point_current_shop');
         location.reload();
       }
     }
@@ -2673,9 +2726,10 @@
     }
 
     function loadTitle() {
-      const savedTitle = localStorage.getItem('point_system_title');
+      const savedTitle = safeGetItem('point_system_title');
       if (savedTitle) {
-        document.getElementById('mainTitle').textContent = savedTitle;
+        const titleEl = document.getElementById('mainTitle');
+        if (titleEl) titleEl.textContent = savedTitle;
       }
     }
 
@@ -2857,10 +2911,10 @@
       const title = document.getElementById('mainTitle');
       const input = document.getElementById('titleInput');
       const newValue = value.trim() || '积分统计系统';
-      title.textContent = newValue;
-      localStorage.setItem('point_system_title', newValue);
-      title.style.display = 'block';
-      input.style.display = 'none';
+      if (title) title.textContent = newValue;
+      safeSetItem('point_system_title', newValue);
+      if (title) title.style.display = 'block';
+      if (input) input.style.display = 'none';
     }
 
     function showLogin() {
@@ -2883,8 +2937,8 @@
       state.currentShop = null;
       state.submitTargetId = null;
       state.values = {};
-      localStorage.removeItem('point_current_user');
-      localStorage.removeItem('point_current_shop');
+      safeRemoveItem('point_current_user');
+      safeRemoveItem('point_current_shop');
       closeAdminModal();
       showLogin();
       showToast('已退出登录', 'success');
@@ -3219,7 +3273,7 @@
           const dateStr = day.toISOString().split('T')[0];
 
           const key = `week_${userId}_${type}_${dateStr}`;
-          const value = localStorage.getItem(key);
+          const value = safeGetItem(key);
           if (value) {
             const input = document.getElementById(`week${type.charAt(0).toUpperCase() + type.slice(1)}${i + 1}`);
             if (input) input.value = value;
@@ -3243,9 +3297,9 @@
 
       const key = `week_${userId}_${type}_${dateStr}`;
       if (value && value > 0) {
-        localStorage.setItem(key, value);
+        safeSetItem(key, value);
       } else {
-        localStorage.removeItem(key);
+        safeRemoveItem(key);
       }
 
       updateWeekTotals();
@@ -3959,8 +4013,8 @@
           state.currentShop = validShop;
           state.adminShopId = validShop ? validShop.id : null;
           state.submitTargetId = null;
-          localStorage.setItem('point_current_user', JSON.stringify(admin));
-          localStorage.setItem('point_current_shop', JSON.stringify(state.currentShop));
+          safeSetItem('point_current_user', JSON.stringify(admin));
+          safeSetItem('point_current_shop', JSON.stringify(state.currentShop));
           saveData();
           showToast('管理员登录成功', 'success');
           showApp();
@@ -4011,8 +4065,8 @@
         state.currentUser = member;
         state.currentShop = shop;
         state.submitTargetId = null;
-        localStorage.setItem('point_current_user', JSON.stringify(member));
-        localStorage.setItem('point_current_shop', JSON.stringify(shop));
+        safeSetItem('point_current_user', JSON.stringify(member));
+        safeSetItem('point_current_shop', JSON.stringify(shop));
         showToast('登录成功', 'success');
         showApp();
       } catch (e) {
@@ -4065,7 +4119,7 @@
         const latestShop = state.shops.find(s => s.id === state.currentShop.id);
         if (latestShop) {
           state.currentShop = latestShop;
-          localStorage.setItem('point_current_shop', JSON.stringify(state.currentShop));
+          safeSetItem('point_current_shop', JSON.stringify(state.currentShop));
         }
       }
       // 刷新主页所有视图
@@ -4136,7 +4190,7 @@
         
         // 同步更新 state.currentShop，确保主页数据与后台管理一致
         state.currentShop = shop;
-        localStorage.setItem('point_current_shop', JSON.stringify(state.currentShop));
+        safeSetItem('point_current_shop', JSON.stringify(state.currentShop));
       }
       
       renderShopList();
@@ -4361,7 +4415,7 @@
           if (currentMember) {
             currentMember[targetType] = member[targetType];
           }
-          localStorage.setItem('point_current_shop', JSON.stringify(state.currentShop));
+          safeSetItem('point_current_shop', JSON.stringify(state.currentShop));
         }
         // 显示确认按钮
         document.getElementById('memberConfirmBar').style.display = 'block';
@@ -4806,7 +4860,7 @@
       // 同步更新 state.currentShop
       if (state.currentShop && state.currentShop.id === shop.id) {
         state.currentShop = shop;
-        localStorage.setItem('point_current_shop', JSON.stringify(state.currentShop));
+        safeSetItem('point_current_shop', JSON.stringify(state.currentShop));
       }
       document.getElementById('newMemberName').value = '';
       document.getElementById('newMemberPhone').value = '';
@@ -4833,7 +4887,7 @@
       // 同步更新 state.currentShop
       if (state.currentShop && state.currentShop.id === shop.id) {
         state.currentShop = shop;
-        localStorage.setItem('point_current_shop', JSON.stringify(state.currentShop));
+        safeSetItem('point_current_shop', JSON.stringify(state.currentShop));
       }
       renderMemberList();
       renderShopList();
