@@ -2060,8 +2060,6 @@
     }
  </style>
   <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"></script>
 </head>
 <body>
   <div id="toast" class="toast"></div>
@@ -2248,21 +2246,6 @@
       { type: 'delivery', name: '交付', unit: '个', rule: '30分/个', pointsPerUnit: 30 }
     ];
 
-    // Firebase 配置
-    const firebaseConfig = {
-      apiKey: "AIzaSyBs8D7Hk9Pz5Y2Yk2Yk2Yk2Yk2Yk2Yk2Yk",
-      authDomain: "point-system-7v8.firebaseapp.com",
-      databaseURL: "https://point-system-7v8-default-rtdb.firebaseio.com",
-      projectId: "point-system-7v8",
-      storageBucket: "point-system-7v8.appspot.com",
-      messagingSenderId: "1234567890",
-      appId: "1:1234567890:web:abc123"
-    };
-
-    // 初始化 Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
     // 目标配置
     const TARGET_TYPES = [
       { type: 'order', name: '订单', targetKey: 'orderTarget', achieveKey: 'orderAchieve' },
@@ -2328,62 +2311,17 @@
           saveData();
         }
       }
-
-      // 尝试从 Firebase 同步数据（如果已配置）
-      syncFromCloud();
-    }
-
-    // 从云端同步数据
-    function syncFromCloud() {
-      db.ref('systemData').once('value').then(snapshot => {
-        const cloudData = snapshot.val();
-        if (cloudData) {
-          // 合并云端数据（以云端为准）
-          state.users = cloudData.users || state.users;
-          state.records = cloudData.records || state.records;
-          state.targets = cloudData.targets || state.targets;
-          state.shops = cloudData.shops || state.shops;
-          state.rules = cloudData.rules || state.rules;
-          
-          // 更新本地缓存
-          localStorage.setItem('point_users', JSON.stringify(state.users));
-          localStorage.setItem('point_records', JSON.stringify(state.records));
-          localStorage.setItem('point_targets', JSON.stringify(state.targets));
-          localStorage.setItem('point_shops', JSON.stringify(state.shops));
-          localStorage.setItem('point_rules', JSON.stringify(state.rules));
-          
-          console.log('数据已从云端同步');
-        }
-      }).catch(error => {
-        // 云端同步失败，使用本地数据
-        console.log('使用本地数据模式');
-      });
     }
 
     function saveData() {
-      // 保存到本地
       localStorage.setItem('point_users', JSON.stringify(state.users));
       localStorage.setItem('point_records', JSON.stringify(state.records));
       localStorage.setItem('point_targets', JSON.stringify(state.targets));
       localStorage.setItem('point_shops', JSON.stringify(state.shops));
-      
-      // 同步到云端
-      const data = {
-        users: state.users,
-        records: state.records,
-        targets: state.targets,
-        shops: state.shops,
-        rules: state.rules
-      };
-      db.ref('systemData').set(data).catch(error => {
-        // 云端保存失败，数据已保存在本地
-        console.log('数据已保存到本地');
-      });
     }
 
     function saveRules() {
       localStorage.setItem('point_rules', JSON.stringify(state.rules));
-      saveData();
     }
 
     function isCurrentUserAdmin() {
