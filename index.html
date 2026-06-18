@@ -2391,22 +2391,18 @@
 
     // 从 GitHub 云端加载数据
     function loadCloudData() {
-      const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.path}?ref=${GITHUB_CONFIG.branch}`;
+      // 使用 raw.githubusercontent.com 直接获取文件内容，避免 API 缓存
+      const rawUrl = `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${GITHUB_CONFIG.path}?t=${Date.now()}`;
       
-      fetch(url, {
-        headers: {
-          'Authorization': `token ${GITHUB_CONFIG.token}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
+      fetch(rawUrl, {
+        headers: { 'Cache-Control': 'no-cache' }
       })
       .then(response => {
-        if (!response.ok) throw new Error('云端数据加载失败');
-        return response.json();
+        if (!response.ok) throw new Error('云端数据加载失败: ' + response.status);
+        return response.text();
       })
-      .then(data => {
-        // GitHub API 返回 base64 编码的内容
-        const content = decodeURIComponent(escape(atob(data.content.replace(/\n/g, ''))));
-        const cloudData = JSON.parse(content);
+      .then(text => {
+        const cloudData = JSON.parse(text);
         
         // 用云端数据覆盖本地
         state.users = cloudData.users || state.users;
@@ -2419,7 +2415,13 @@
         saveLocalData();
         cloudDataLoaded = true;
         
-        console.log('云端数据加载成功');
+        console.log('✅ 云端数据加载成功，门店数:', state.shops.length, '用户数:', state.users.length);
+        // 打印门店和人员信息便于调试
+        state.shops.forEach(shop => {
+          console.log(`  门店: ${shop.name}, 人员数: ${shop.members ? shop.members.length : 0}`);
+        });
+        updateCloudStatus();
+        
         // 如果已登录，刷新界面
         if (state.currentUser) {
           updateUserInfo();
@@ -2430,6 +2432,7 @@
       .catch(error => {
         console.log('使用本地数据模式:', error.message);
         cloudDataLoaded = false;
+        updateCloudStatus();
       });
     }
 
@@ -2457,6 +2460,12 @@
 
     // 保存数据到 GitHub 云端
     function saveCloudData() {
+      // 如果没有 Token，无法保存到云端
+      if (!GITHUB_CONFIG.token) {
+        console.log('未配置 Token，数据仅保存在本地');
+        return;
+      }
+      
       const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.path}`;
       
       const data = {
@@ -2477,8 +2486,12 @@
           'Accept': 'application/vnd.github.v3+json'
         }
       })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) throw new Error('获取文件信息失败: ' + response.status);
+        return response.json();
+      })
       .then(fileInfo => {
+        console.log('获取到文件 sha:', fileInfo.sha);
         // 更新文件
         return fetch(url, {
           method: 'PUT',
@@ -2488,7 +2501,7 @@
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            message: '更新积分系统数据',
+            message: '更新积分系统数据 ' + new Date().toLocaleString('zh-CN'),
             content: content,
             sha: fileInfo.sha,
             branch: GITHUB_CONFIG.branch
@@ -2497,13 +2510,18 @@
       })
       .then(response => {
         if (response.ok) {
-          console.log('数据已同步到云端');
+          console.log('✅ 数据已同步到云端');
+          showToast('数据已同步到云端', 'success');
         } else {
-          console.log('云端同步失败');
+          response.json().then(err => {
+            console.error('云端同步失败:', err);
+            showToast('云端同步失败: ' + (err.message || '未知错误'), 'error');
+          });
         }
       })
       .catch(error => {
-        console.log('云端保存失败，数据已保存在本地:', error.message);
+        console.error('云端保存失败:', error.message);
+        showToast('云端保存失败，数据已保存在本地', 'error');
       });
     }
 
