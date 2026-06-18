@@ -2392,10 +2392,12 @@
       const targets = safeGetItem('point_targets');
       const rules = safeGetItem('point_rules');
       const shops = safeGetItem('point_shops');
+      const localUpdatedAt = safeGetItem('point_updated_at');
       state.users = safeJSONParse(users, []);
       state.records = safeJSONParse(records, []);
       state.targets = safeJSONParse(targets, {});
       state.shops = safeJSONParse(shops, []);
+      state.localUpdatedAt = parseInt(localUpdatedAt || '0', 10) || 0;
       
       if (rules) {
         state.rules = safeJSONParse(rules, JSON.parse(JSON.stringify(ELEMENTS)));
@@ -2456,12 +2458,23 @@
       const owner = GITHUB_CONFIG.owner, repo = GITHUB_CONFIG.repo, path = GITHUB_CONFIG.path, branch = GITHUB_CONFIG.branch;
       const ts = Date.now();
 
-      // 数据源（按优先级）：1.jsdelivr(快/可能有缓存) 2.GitHub API(最新/国内可访问) 3.raw(最新/可能被墙)
-      const sources = [
-        { name: 'jsdelivr', fetch: () => fetchText(`https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/${path}?t=${ts}`) },
-        { name: 'GitHub API', fetch: () => fetchGitHubApi(`https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}&t=${ts}`) },
-        { name: 'raw', fetch: () => fetchText(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}?t=${ts}`) }
-      ];
+      // 数据源优先级（重要！GitHub API 最新但有速率限制，jsdelivr 快但有缓存）
+      // 管理员模式：用 GitHub API（确保拿到最新数据，避免 CDN 缓存导致删除后刷新重新出现）
+      // 普通模式：先 jsdelivr（快）+ GitHub API（最新）
+      const sources;
+      if (state.currentUser && state.currentUser.isAdmin && GITHUB_CONFIG.token) {
+        sources = [
+          { name: 'GitHub API', fetch: () => fetchGitHubApi(`https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}&t=${ts}`) },
+          { name: 'jsdelivr', fetch: () => fetchText(`https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/${path}?t=${ts}`) },
+          { name: 'raw', fetch: () => fetchText(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}?t=${ts}`) }
+        ];
+      } else {
+        sources = [
+          { name: 'jsdelivr', fetch: () => fetchText(`https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/${path}?t=${ts}`) },
+          { name: 'GitHub API', fetch: () => fetchGitHubApi(`https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}&t=${ts}`) },
+          { name: 'raw', fetch: () => fetchText(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}?t=${ts}`) }
+        ];
+      }
 
       let idx = 0;
       function tryNext() {
@@ -2509,22 +2522,37 @@
       function applyCloudData(text) {
         try {
           const cloudData = JSON.parse(text);
-          state.users = cloudData.users || state.users;
-          state.records = cloudData.records || state.records;
-          state.targets = cloudData.targets || state.targets;
-          state.shops = cloudData.shops || state.shops;
-          if (cloudData.rules) state.rules = cloudData.rules;
-          saveLocalData();
-          cloudDataLoaded = true;
 
-          console.log('云端数据：门店', state.shops.length, '个，用户', state.users.length, '个');
-          state.shops.forEach(shop => {
-            console.log(`  门店[${shop.name}] 人员${shop.members ? shop.members.length : 0}人`);
-          });
+          // 关键：对比云端 updatedAt 和本地 updatedAt，只有云端更新时才覆盖
+          // 防止 CDN 缓存的旧数据覆盖刚修改的本地数据
+          const cloudUpdatedAt = cloudData.updatedAt ? new Date(cloudData.updatedAt).getTime() : 0;
+          const localUpdatedAt = state.localUpdatedAt || 0;
+
+          if (cloudUpdatedAt > localUpdatedAt) {
+            console.log(`✅ 云端数据更新(${new Date(cloudUpdatedAt).toLocaleString('zh-CN')})，覆盖本地数据`);
+            state.users = cloudData.users || state.users;
+            state.records = cloudData.records || state.records;
+            state.targets = cloudData.targets || state.targets;
+            state.shops = cloudData.shops || state.shops;
+            if (cloudData.rules) state.rules = cloudData.rules;
+            state.localUpdatedAt = cloudUpdatedAt;
+            saveLocalData();
+          } else if (localUpdatedAt > cloudUpdatedAt) {
+            console.log(`⚠️ 本地数据更新(${new Date(localUpdatedAt).toLocaleString('zh-CN')}) > 云端(${new Date(cloudUpdatedAt).toLocaleString('zh-CN')})，保留本地数据`);
+            // 本地更新，尝试重新写入云端（确保云端是最新的）
+            if (GITHUB_CONFIG.token && state.currentUser && state.currentUser.isAdmin) {
+              console.log('🔄 本地数据更新，重新写入云端...');
+              setTimeout(() => saveCloudData(), 500);
+            }
+          } else {
+            console.log('ℹ️ 云端数据与本地数据一致');
+          }
+
+          cloudDataLoaded = true;
+          console.log('当前门店数：', state.shops.length, '，用户数：', state.users.length);
           safeCall(updateCloudStatus);
           setBtnLoading(false);
 
-          // 如果已登录，刷新界面（用 safeCall 避免抛错）
           if (state.currentUser) {
             safeCall(updateUserInfo);
             safeCall(renderTeamSummaryColumn);
@@ -2548,13 +2576,15 @@
       safeSetItem('point_targets', JSON.stringify(state.targets));
       safeSetItem('point_shops', JSON.stringify(state.shops));
       safeSetItem('point_rules', JSON.stringify(state.rules));
+      safeSetItem('point_updated_at', String(state.localUpdatedAt || Date.now()));
     }
 
     // 保存数据（本地 + 云端）
     function saveData() {
+      // 更新本地修改时间戳
+      state.localUpdatedAt = Date.now();
       // 先保存到本地
       saveLocalData();
-      
       // 异步保存到 GitHub 云端
       saveCloudData();
     }
@@ -2678,6 +2708,7 @@
     }
 
     function saveRules() {
+      state.localUpdatedAt = Date.now();
       saveLocalData();
       saveCloudData();
     }
