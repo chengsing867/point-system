@@ -2060,6 +2060,7 @@
     }
  </style>
   <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <div id="toast" class="toast"></div>
@@ -2207,16 +2208,29 @@
 
         <!-- 云端配置 -->
         <div class="admin-section-box">
-          <div class="section-label" style="border-left-color: #8b5cf6;">☁️ 云端同步配置</div>
+          <div class="section-label" style="border-left-color: #8b5cf6;">☁️ Supabase 云数据库配置</div>
           <div style="padding: 12px; background: #f8f9fa; border-radius: 8px; margin-bottom: 8px;">
             <div id="cloudStatus" style="font-size: 12px; color: #666; margin-bottom: 8px;"></div>
-            <div style="display: flex; gap: 8px; align-items: center;">
-              <input type="password" id="githubTokenInput" placeholder="输入 GitHub Token (ghp_...)" style="flex:1; padding:8px 12px; border:1px solid #e5e7eb; border-radius:6px; font-size:13px;">
-              <button onclick="saveGitHubToken()" style="padding:8px 16px; background:#8b5cf6; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:13px;">保存</button>
+            <div style="margin-bottom: 8px;">
+              <label style="font-size: 12px; color: #666; display: block; margin-bottom: 4px;">Project URL</label>
+              <input type="text" id="supabaseUrlInput" placeholder="https://xxxx.supabase.co" style="width:100%; padding:8px 12px; border:1px solid #e5e7eb; border-radius:6px; font-size:13px;">
             </div>
+            <div style="margin-bottom: 8px;">
+              <label style="font-size: 12px; color: #666; display: block; margin-bottom: 4px;">Anon Key</label>
+              <input type="password" id="supabaseKeyInput" placeholder="eyJhbGciOi..." style="width:100%; padding:8px 12px; border:1px solid #e5e7eb; border-radius:6px; font-size:13px;">
+            </div>
+            <button onclick="saveSupabaseConfig()" style="width:100%; padding:10px; background:#8b5cf6; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:14px;">保存配置并同步</button>
             <div style="font-size: 11px; color: #999; margin-top: 8px;">
-              配置 Token 后，数据将自动同步到云端，扫码即可登录使用<br>
-              <a href="https://github.com/settings/tokens" target="_blank" style="color: #8b5cf6;">点击创建 Token</a>（勾选 repo 权限）
+              <b>配置步骤：</b><br>
+              1. 访问 <a href="https://supabase.com" target="_blank" style="color: #8b5cf6;">supabase.com</a> 注册（任何邮箱即可）<br>
+              2. 创建新项目（选免费版）<br>
+              3. 在 SQL Editor 中执行建表语句（见下方）<br>
+              4. 在 Project Settings → API 中复制 URL 和 anon key<br>
+              5. 粘贴到上方输入框并保存<br>
+              <b>建表SQL：</b><br>
+              <textarea readonly style="width:100%; height:80px; margin-top:4px; font-size:10px; padding:4px; border:1px solid #e5e7eb; border-radius:4px;">create table app_data (id int primary key, data jsonb, updated_at timestamptz default now());
+alter table app_data enable row level security;
+create policy "allow all" on app_data for all using (true) with check (true);</textarea>
             </div>
           </div>
         </div>
@@ -2269,55 +2283,66 @@
       { type: 'ticket', name: '门票', targetKey: 'ticketTarget', achieveKey: 'ticketAchieve' }
     ];
 
-    // GitHub API 配置（用于云端数据共享）
-    // Token 通过环境变量或运行时配置获取，避免硬编码在代码中
-    const GITHUB_CONFIG = {
-      token: '',  // 运行时从 localStorage 或用户输入获取
-      owner: 'chengsing867',
-      repo: 'point-system',
-      path: 'data.json',
-      branch: 'main'
+    // ===== Supabase 配置（云数据库，实时同步）=====
+    // 用户注册 Supabase 后，在管理界面输入项目 URL 和 anon key
+    const SUPABASE_CONFIG = {
+      url: '',      // 运行时从 localStorage 获取，例如 https://xxxx.supabase.co
+      anonKey: ''   // 运行时从 localStorage 获取
     };
+    let supabase = null;  // Supabase 客户端实例
+    let realtimeChannel = null;  // 实时订阅频道
 
-    // 初始化 GitHub Token
-    function initGitHubToken() {
-      // 优先从 localStorage 获取
-      const savedToken = safeGetItem('github_token');
-      if (savedToken) {
-        GITHUB_CONFIG.token = savedToken;
-        return true;
+    // 初始化 Supabase 客户端
+    function initSupabase() {
+      const savedUrl = safeGetItem('supabase_url');
+      const savedKey = safeGetItem('supabase_anon_key');
+      if (savedUrl && savedKey) {
+        SUPABASE_CONFIG.url = savedUrl;
+        SUPABASE_CONFIG.anonKey = savedKey;
+        try {
+          supabase = window.supabase.createClient(savedUrl, savedKey);
+          console.log('✅ Supabase 客户端已初始化');
+          return true;
+        } catch (e) {
+          console.error('Supabase 初始化失败:', e);
+          return false;
+        }
       }
       return false;
     }
 
-    // 设置 GitHub Token（管理员首次使用时调用）
-    function setGitHubToken(token) {
-      GITHUB_CONFIG.token = token;
-      safeSetItem('github_token', token);
-    }
-
-    // 保存 GitHub Token（从管理界面输入）
-    function saveGitHubToken() {
-      const token = document.getElementById('githubTokenInput').value.trim();
-      if (!token) {
-        showToast('请输入 Token', 'error');
+    // 保存 Supabase 配置（从管理界面输入）
+    function saveSupabaseConfig() {
+      const url = document.getElementById('supabaseUrlInput').value.trim();
+      const key = document.getElementById('supabaseKeyInput').value.trim();
+      if (!url || !key) {
+        showToast('请输入完整配置', 'error');
         return;
       }
-      setGitHubToken(token);
-      showToast('Token 保存成功，正在同步数据...', 'success');
-      updateCloudStatus();
-      loadCloudData();
+      SUPABASE_CONFIG.url = url;
+      SUPABASE_CONFIG.anonKey = key;
+      safeSetItem('supabase_url', url);
+      safeSetItem('supabase_anon_key', key);
+      try {
+        supabase = window.supabase.createClient(url, key);
+        showToast('配置保存成功，正在同步数据...', 'success');
+        updateCloudStatus();
+        loadCloudData();
+        subscribeRealtime();
+      } catch (e) {
+        showToast('配置失败: ' + e.message, 'error');
+      }
     }
 
     // 更新云端状态显示
     function updateCloudStatus() {
       const statusEl = document.getElementById('cloudStatus');
       if (!statusEl) return;
-      if (GITHUB_CONFIG.token) {
-        statusEl.innerHTML = '✅ 已配置 Token，数据将自动同步到云端<br>状态: ' + (cloudDataLoaded ? '云端连接正常' : '正在连接...');
+      if (SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey) {
+        statusEl.innerHTML = '✅ 已配置 Supabase，数据实时同步<br>状态: ' + (cloudDataLoaded ? '云端连接正常' : '正在连接...');
         statusEl.style.color = '#10b981';
       } else {
-        statusEl.innerHTML = '⚠️ 未配置 Token，数据仅保存在本地，无法扫码共享';
+        statusEl.innerHTML = '⚠️ 未配置 Supabase，数据仅保存在本地，无法多端同步';
         statusEl.style.color = '#ef4444';
       }
     }
@@ -2356,8 +2381,8 @@
 
     function init() {
       try {
-        // 初始化 GitHub Token
-        initGitHubToken();
+        // 初始化 Supabase 客户端
+        initSupabase();
         // 先从本地加载，立即显示界面
         loadLocalData();
         // 检查登录状态（失败则清除并回退到登录页）
@@ -2381,7 +2406,10 @@
       }
       // 延迟加载云端数据，确保登录页先稳定渲染
       setTimeout(() => {
-        try { loadCloudData(); } catch (e) { console.error('loadCloudData 失败:', e); }
+        try {
+          loadCloudData();
+          subscribeRealtime();
+        } catch (e) { console.error('loadCloudData 失败:', e); }
       }, 200);
     }
 
@@ -2426,8 +2454,13 @@
       }
     }
 
-    // 从 GitHub 云端加载数据（三层回退：jsdelivr CDN → GitHub API → raw）
+    // 从 Supabase 云端加载数据
     function loadCloudData() {
+      if (!supabase) {
+        console.log('未配置 Supabase，跳过云端加载');
+        return;
+      }
+
       const loginBtn = document.querySelector('#step1 .btn-primary');
       const setBtnLoading = (loading) => {
         if (!loginBtn) return;
@@ -2443,7 +2476,7 @@
       };
       setBtnLoading(true);
 
-      // 超时保护：8秒后无论结果都恢复登录按钮（避免弱网卡死）
+      // 超时保护：8秒后恢复登录按钮
       let finished = false;
       const timeoutId = setTimeout(() => {
         if (!finished) {
@@ -2455,81 +2488,37 @@
         }
       }, 8000);
 
-      const owner = GITHUB_CONFIG.owner, repo = GITHUB_CONFIG.repo, path = GITHUB_CONFIG.path, branch = GITHUB_CONFIG.branch;
-      const ts = Date.now();
-
-      // 数据源优先级（重要！GitHub API 最新但有速率限制，jsdelivr 快但有缓存）
-      // 管理员模式：用 GitHub API（确保拿到最新数据，避免 CDN 缓存导致删除后刷新重新出现）
-      // 普通模式：先 jsdelivr（快）+ GitHub API（最新）
-      let sources;
-      if (state.currentUser && state.currentUser.isAdmin && GITHUB_CONFIG.token) {
-        sources = [
-          { name: 'GitHub API', fetch: () => fetchGitHubApi(`https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}&t=${ts}`) },
-          { name: 'jsdelivr', fetch: () => fetchText(`https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/${path}?t=${ts}`) },
-          { name: 'raw', fetch: () => fetchText(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}?t=${ts}`) }
-        ];
-      } else {
-        sources = [
-          { name: 'jsdelivr', fetch: () => fetchText(`https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/${path}?t=${ts}`) },
-          { name: 'GitHub API', fetch: () => fetchGitHubApi(`https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}&t=${ts}`) },
-          { name: 'raw', fetch: () => fetchText(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}?t=${ts}`) }
-        ];
-      }
-
-      let idx = 0;
-      function tryNext() {
-        if (finished) return;
-        if (idx >= sources.length) {
+      // 从 Supabase 的 app_data 表读取 id=1 的记录
+      supabase.from('app_data').select('data, updated_at').eq('id', 1).maybeSingle()
+        .then(({ data, error }) => {
+          if (finished) return;
           finished = true;
           clearTimeout(timeoutId);
-          console.log('⚠️ 所有云端数据源均失败，使用本地数据');
-          cloudDataLoaded = false;
-          safeCall(updateCloudStatus);
-          setBtnLoading(false);
-          return;
-        }
-        const src = sources[idx++];
-        // 每个数据源设置 5 秒超时
-        Promise.race([
-          src.fetch(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('超时')), 5000))
-        ])
-          .then(text => {
-            if (finished) return;
-            finished = true;
-            clearTimeout(timeoutId);
-            console.log(`✅ [${src.name}] 数据加载成功`);
-            applyCloudData(text);
-          })
-          .catch(err => {
-            console.log(`❌ [${src.name}] 加载失败:`, err.message);
-            tryNext();
-          });
-      }
-      tryNext();
 
-      function fetchText(url) {
-        return fetch(url, { headers: { 'Cache-Control': 'no-cache' } })
-          .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.text(); });
-      }
+          if (error) {
+            console.error('Supabase 加载失败:', error.message);
+            cloudDataLoaded = false;
+            safeCall(updateCloudStatus);
+            setBtnLoading(false);
+            return;
+          }
 
-      function fetchGitHubApi(url) {
-        return fetch(url, { headers: { 'Accept': 'application/vnd.github.v3+json' } })
-          .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
-          .then(data => decodeURIComponent(escape(atob((data.content || '').replace(/\n/g, '')))));
-      }
+          if (!data || !data.data) {
+            console.log('云端无数据，使用本地数据');
+            cloudDataLoaded = true;
+            safeCall(updateCloudStatus);
+            setBtnLoading(false);
+            return;
+          }
 
-      function applyCloudData(text) {
-        try {
-          const cloudData = JSON.parse(text);
-
-          // 关键：对比云端 updatedAt 和本地 updatedAt，只有云端更新时才覆盖
-          // 防止 CDN 缓存的旧数据覆盖刚修改的本地数据
-          const cloudUpdatedAt = cloudData.updatedAt ? new Date(cloudData.updatedAt).getTime() : 0;
+          // 解析云端数据
+          const cloudData = typeof data.data === 'string' ? JSON.parse(data.data) : data.data;
+          const cloudUpdatedAt = data.updated_at ? new Date(data.updated_at).getTime() : 0;
           const localUpdatedAt = state.localUpdatedAt || 0;
 
+          // 时间戳对比：只有云端更新时才覆盖本地
           if (cloudUpdatedAt > localUpdatedAt) {
-            console.log(`✅ 云端数据更新(${new Date(cloudUpdatedAt).toLocaleString('zh-CN')})，覆盖本地数据`);
+            console.log('✅ 云端数据更新，覆盖本地');
             state.users = cloudData.users || state.users;
             state.records = cloudData.records || state.records;
             state.targets = cloudData.targets || state.targets;
@@ -2537,15 +2526,8 @@
             if (cloudData.rules) state.rules = cloudData.rules;
             state.localUpdatedAt = cloudUpdatedAt;
             saveLocalData();
-          } else if (localUpdatedAt > cloudUpdatedAt) {
-            console.log(`⚠️ 本地数据更新(${new Date(localUpdatedAt).toLocaleString('zh-CN')}) > 云端(${new Date(cloudUpdatedAt).toLocaleString('zh-CN')})，保留本地数据`);
-            // 本地更新，尝试重新写入云端（确保云端是最新的）
-            if (GITHUB_CONFIG.token && state.currentUser && state.currentUser.isAdmin) {
-              console.log('🔄 本地数据更新，重新写入云端...');
-              setTimeout(() => saveCloudData(), 500);
-            }
           } else {
-            console.log('ℹ️ 云端数据与本地数据一致');
+            console.log('ℹ️ 本地数据已是最新');
           }
 
           cloudDataLoaded = true;
@@ -2558,11 +2540,32 @@
             safeCall(renderTeamSummaryColumn);
             safeCall(updateBanner);
           }
-        } catch (e) {
-          console.error('解析云端数据失败:', e);
+        })
+        .catch(err => {
+          if (finished) return;
+          finished = true;
+          clearTimeout(timeoutId);
+          console.error('Supabase 加载异常:', err.message);
+          cloudDataLoaded = false;
+          safeCall(updateCloudStatus);
           setBtnLoading(false);
-        }
+        });
+    }
+
+    // 实时订阅：当云端数据变化时自动刷新（手机修改电脑秒级看到）
+    function subscribeRealtime() {
+      if (!supabase) return;
+      // 避免重复订阅
+      if (realtimeChannel) {
+        try { supabase.removeChannel(realtimeChannel); } catch (e) {}
       }
+      realtimeChannel = supabase.channel('app_data_changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'app_data' }, payload => {
+          console.log('🔄 收到实时更新:', payload.eventType);
+          // 收到更新通知后，重新加载云端数据
+          loadCloudData();
+        })
+        .subscribe();
     }
 
     function loadData() {
@@ -2585,29 +2588,27 @@
       state.localUpdatedAt = Date.now();
       // 先保存到本地
       saveLocalData();
-      // 异步保存到 GitHub 云端
+      // 异步保存到 Supabase 云端
       saveCloudData();
     }
 
-    // 保存数据到 GitHub 云端（带自动重试，解决 SHA 冲突）
-    let saveLock = false;  // 保存锁，避免并发保存
-    let pendingSave = null; // 待执行的保存请求
+    // 保存数据到 Supabase 云端（所有用户都能写入，无需 Token）
+    let saveLock = false;
+    let pendingSave = false;
 
     function saveCloudData() {
-      // 如果没有 Token，无法保存到云端
-      if (!GITHUB_CONFIG.token) {
-        console.log('未配置 Token，数据仅保存在本地');
+      if (!supabase) {
+        console.log('未配置 Supabase，数据仅保存在本地');
         return;
       }
 
-      // 串行化保存：避免并发请求导致 SHA 冲突
+      // 串行化保存
       if (saveLock) {
-        console.log('⏳ 上一个保存任务进行中，合并到下一个');
         pendingSave = true;
         return;
       }
       saveLock = true;
-      
+
       const data = {
         users: state.users,
         records: state.records,
@@ -2617,92 +2618,29 @@
         updatedAt: new Date().toISOString()
       };
 
-      const jsonStr = JSON.stringify(data);
-      const content = btoa(unescape(encodeURIComponent(jsonStr)));
-      
-      const apiBase = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}`;
-      const headers = {
-        'Authorization': `token ${GITHUB_CONFIG.token}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json'
-      };
-
-      // 自动重试：遇到 SHA 冲突时重新获取最新 SHA 并重试
-      let retryCount = 0;
-      const MAX_RETRY = 3;
-      
-      function attemptSave() {
-        // 步骤1: 每次都重新获取最新的 SHA（解决冲突的关键）
-        return fetch(`${apiBase}/contents/${GITHUB_CONFIG.path}?ref=${GITHUB_CONFIG.branch}&t=${Date.now()}`, { headers })
-        .then(response => {
-          if (response.status === 404) {
-            return doUpdate(null);
+      // 使用 upsert：如果 id=1 存在则更新，不存在则插入
+      supabase.from('app_data').upsert({
+        id: 1,
+        data: data,
+        updated_at: new Date().toISOString()
+      }).select()
+        .then(({ data: result, error }) => {
+          if (error) {
+            console.error('云端保存失败:', error.message);
+            showToast('云端保存失败: ' + error.message, 'error');
+          } else {
+            console.log('✅ 数据已同步到 Supabase 云端');
           }
-          if (!response.ok) throw new Error('获取文件sha失败: HTTP ' + response.status);
-          return response.json().then(fileInfo => {
-            const sha = fileInfo.sha;
-            console.log(`[尝试${retryCount + 1}] 获取到文件 sha:`, sha);
-            return doUpdate(sha);
-          });
         })
-        .catch(error => handleError(error));
-      }
-
-      function doUpdate(sha) {
-        const body = {
-          message: '更新积分系统数据 ' + new Date().toLocaleString('zh-CN'),
-          content: content,
-          branch: GITHUB_CONFIG.branch
-        };
-        if (sha) body.sha = sha;
-        
-        return fetch(`${apiBase}/contents/${GITHUB_CONFIG.path}`, {
-          method: 'PUT',
-          headers: headers,
-          body: JSON.stringify(body)
-        })
-        .then(response => {
-          if (response.ok) {
-            return response.json().then(data => {
-              console.log('✅ 数据已同步到云端，commit:', data.commit && data.commit.sha);
-              showToast('数据已同步到云端', 'success');
-              return data;
-            });
-          }
-          return response.json().then(err => {
-            throw new Error(err.message || 'HTTP ' + response.status);
-          });
-        })
-        .catch(error => handleError(error));
-      }
-
-      function handleError(error) {
-        const isSHAConflict = error.message && (error.message.includes('does not match') || error.message.includes('not match') || error.message.includes('SHA'));
-        if (isSHAConflict && retryCount < MAX_RETRY) {
-          retryCount++;
-          console.warn(`[尝试${retryCount}] SHA冲突，1秒后重新获取最新SHA并重试:`, error.message);
-          return new Promise(resolve => setTimeout(resolve, 1000)).then(() => attemptSave());
-        }
-        if (retryCount < MAX_RETRY) {
-          retryCount++;
-          console.warn(`[尝试${retryCount}] 保存失败，1秒后重试:`, error.message);
-          return new Promise(resolve => setTimeout(resolve, 1000)).then(() => attemptSave());
-        }
-        throw error;
-      }
-
-      attemptSave()
-        .catch(error => {
-          console.error('云端保存失败:', error.message);
-          showToast('云端保存失败: ' + error.message, 'error');
+        .catch(err => {
+          console.error('云端保存异常:', err.message);
+          showToast('云端保存异常: ' + err.message, 'error');
         })
         .finally(() => {
           saveLock = false;
-          // 如果有挂起的保存请求，执行最新一次
           if (pendingSave) {
             pendingSave = false;
-            console.log('🔄 执行挂起的保存请求');
-            setTimeout(() => saveCloudData(), 500);
+            setTimeout(() => saveCloudData(), 300);
           }
         });
     }
