@@ -42,6 +42,24 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    @keyframes appEnter {
+      from { opacity: 0; transform: scale(0.96) translateY(20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    @keyframes loginFadeOut {
+      from { opacity: 1; transform: scale(1); }
+      to { opacity: 0; transform: scale(1.05); }
+    }
+
+    .login-page.fading-out {
+      animation: loginFadeOut 0.4s ease-in forwards;
+    }
+
+    .app-container.entering {
+      animation: appEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
     @keyframes pulse {
       0%, 100% { transform: scale(1); }
       50% { transform: scale(1.05); }
@@ -73,6 +91,7 @@
       max-width: 400px;
       box-shadow: var(--shadow-hover);
       animation: slideUp 0.6s ease-out;
+      margin: 0 auto;
     }
 
     .login-logo { text-align: center; margin-bottom: 32px; }
@@ -181,6 +200,14 @@
 
     .header-btn:hover { background: rgba(255,255,255,0.3); }
 
+    .header-btn.logout-btn {
+      background: rgba(220, 53, 69, 0.85);
+    }
+
+    .header-btn.logout-btn:hover {
+      background: rgba(200, 35, 51, 0.95);
+    }
+
     /* 标题区域 */
     .title-section {
       text-align: center;
@@ -231,164 +258,87 @@
     }
 
     .ranking-list {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
       gap: 8px;
       padding: 12px;
-      max-height: 280px;
+      max-height: 320px;
       overflow-y: auto;
+      justify-content: center;
+    }
+
+    /* 人数较少时（≤3人）也保持每行3个的固定布局 */
+    .ranking-list.few-items {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      justify-content: center;
+    }
+    .ranking-list.few-items .ranking-item {
+      min-width: 0;
+      max-width: none;
+    }
+
+    /* 人数较多时（≥4人）固定每行3个 */
+    .ranking-list.grid-items {
+      grid-template-columns: repeat(3, 1fr);
     }
 
     .ranking-item {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 8px 12px;
+      padding: 8px 10px;
       background: #f8f9fa;
-      border-radius: 20px;
+      border-radius: 12px;
       font-size: 13px;
+      transition: all 0.2s;
+      min-width: 0;
     }
 
-    /* 冠军样式 */
-    .ranking-item.champion {
-      background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%);
-      color: #fff;
-      border: 2px solid #FFD700;
-      box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
-      width: 100%;
-      flex-direction: column;
+    .ranking-item.current {
+      background: rgba(212, 165, 116, 0.15);
+      border: 1px solid var(--secondary);
+    }
+
+    /* 名次色块 */
+    .ranking-item .rank-block {
+      display: inline-flex;
       align-items: center;
-      padding: 16px;
-      border-radius: 16px;
-      gap: 6px;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
       font-size: 14px;
       font-weight: 700;
-    }
-
-    .ranking-item.champion.current {
-      background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%);
-      box-shadow: 0 4px 12px rgba(255, 215, 0, 0.5);
-    }
-
-    .ranking-item.champion .champion-header {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .ranking-item.champion .champion-icon {
-      font-size: 22px;
-      animation: pulse 2s ease-in-out infinite;
-    }
-
-    .ranking-item.champion .champion-label {
-      font-size: 15px;
-      font-weight: 700;
       color: #fff;
+      flex-shrink: 0;
     }
 
-    .ranking-item.champion .rank {
-      font-size: 15px;
-      font-weight: 700;
-      color: #fff;
+    /* 第1名：金色 */
+    .ranking-item .rank-block.rank-1 {
+      background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+      box-shadow: 0 2px 6px rgba(255, 165, 0, 0.4);
     }
 
-    .ranking-item.champion .champion-points {
-      font-size: 20px;
-      font-weight: 700;
-      color: #fff;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    }
-
-    /* 亚军样式 */
-    .ranking-item.runner-up {
+    /* 第2名：银色 */
+    .ranking-item .rank-block.rank-2 {
       background: linear-gradient(135deg, #C0C0C0 0%, #A9A9A9 100%);
-      color: #fff;
-      border: 2px solid #C0C0C0;
-      box-shadow: 0 3px 10px rgba(192, 192, 192, 0.25);
-      padding: 10px 14px;
-      font-size: 13px;
-      font-weight: 600;
+      box-shadow: 0 2px 6px rgba(169, 169, 169, 0.4);
     }
 
-    .ranking-item.runner-up.current {
-      box-shadow: 0 3px 10px rgba(192, 192, 192, 0.4);
-    }
-
-    .ranking-item.runner-up .runner-up-icon {
-      font-size: 18px;
-    }
-
-    .ranking-item.runner-up .runner-up-label {
-      font-size: 13px;
-      font-weight: 700;
-      color: #fff;
-    }
-
-    .ranking-item.runner-up .name,
-    .ranking-item.runner-up .points {
-      color: #fff;
-    }
-
-    /* 季军样式 */
-    .ranking-item.third-place {
+    /* 第3名：铜色 */
+    .ranking-item .rank-block.rank-3 {
       background: linear-gradient(135deg, #CD7F32 0%, #B87333 100%);
-      color: #fff;
-      border: 2px solid #CD7F32;
-      box-shadow: 0 3px 10px rgba(205, 127, 50, 0.25);
-      padding: 10px 14px;
-      font-size: 13px;
-      font-weight: 600;
+      box-shadow: 0 2px 6px rgba(184, 115, 51, 0.4);
     }
 
-    .ranking-item.third-place.current {
-      box-shadow: 0 3px 10px rgba(205, 127, 50, 0.4);
-    }
-
-    .ranking-item.third-place .third-place-icon {
-      font-size: 18px;
-    }
-
-    .ranking-item.third-place .third-place-label {
-      font-size: 13px;
-      font-weight: 700;
-      color: #fff;
-    }
-
-    .ranking-item.third-place .name,
-    .ranking-item.third-place .points {
-      color: #fff;
-    }
-
-    /* 其他排名样式 */
-    .ranking-item.other-rank {
-      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-      border: 1px solid #dee2e6;
-      padding: 8px 14px;
-    }
-
-    .ranking-item.other-rank.current {
-      border: 2px solid var(--secondary);
-      background: rgba(212, 165, 116, 0.15);
-    }
-
-    .ranking-item.other-rank .other-rank-label {
-      font-weight: 700;
-      color: #6c757d;
-      min-width: 50px;
-    }
-
-    .ranking-item.current .other-rank-label {
-      color: var(--secondary);
-    }
-
-    .ranking-item .rank {
-      font-weight: 700;
-      min-width: 20px;
-      color: var(--text-secondary);
+    /* 第4名及以后：统一蓝灰色 */
+    .ranking-item .rank-block.rank-other {
+      background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
     }
 
     .ranking-item .name {
+      flex: 1;
       font-weight: 500;
       color: var(--text);
     }
@@ -572,7 +522,11 @@
 
     .column-header.gold { background: linear-gradient(135deg, var(--secondary) 0%, #c49660 100%); }
 
-    .column-content { padding: 12px; }
+    .column-content {
+      padding: 12px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
 
     /* 目标达成表格 */
     .target-table {
@@ -831,6 +785,206 @@
       border-bottom: none;
     }
 
+    /* 个人过程数据汇总表格 */
+    .personal-summary-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      max-width: 100%;
+    }
+
+    .personal-summary-table {
+      border-collapse: collapse;
+      font-size: 12px;
+      min-width: 900px;
+      width: 100%;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .personal-summary-table th {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      color: var(--text-secondary);
+      font-weight: 600;
+      padding: 8px 4px;
+      text-align: center;
+      font-size: 11px;
+      border: 1px solid #dee2e6;
+      white-space: nowrap;
+    }
+
+    .personal-summary-table td {
+      padding: 8px 4px;
+      text-align: center;
+      border: 1px solid #e9ecef;
+      font-size: 12px;
+    }
+
+    .personal-summary-table .col-name-cell {
+      min-width: 60px;
+      width: 60px;
+      text-align: center;
+      font-weight: 600;
+      color: var(--text);
+      padding: 8px 6px;
+      background: #fafbfc;
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      white-space: nowrap;
+      box-shadow: 2px 0 4px rgba(0,0,0,0.08);
+    }
+
+    .personal-summary-table thead .col-name-cell {
+      background: linear-gradient(135deg, var(--primary) 0%, #2d4a7c 100%);
+      color: #fff;
+      z-index: 2;
+      box-shadow: 2px 0 4px rgba(0,0,0,0.15);
+    }
+
+    .personal-summary-table .col-day-group {
+      background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+      color: var(--text);
+      font-size: 12px;
+    }
+
+    .personal-summary-table .col-sub {
+      background: #f8f9fa;
+      font-size: 10px;
+      color: var(--text-secondary);
+      width: 40px;
+      min-width: 40px;
+    }
+
+    .personal-summary-table .col-sub-points {
+      background: #fff5e6;
+      font-size: 10px;
+      color: var(--secondary);
+      width: 42px;
+      min-width: 42px;
+    }
+
+    .personal-summary-table .col-total-group {
+      background: linear-gradient(135deg, rgba(212, 165, 116, 0.2) 0%, rgba(212, 165, 116, 0.3) 100%);
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .personal-summary-table tbody tr:hover {
+      background: rgba(212, 165, 116, 0.05);
+    }
+
+    .personal-summary-table tbody tr:hover .col-name-cell {
+      background: rgba(212, 165, 116, 0.08);
+    }
+
+    .personal-summary-table .col-value {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    /* 管理员可编辑的周数据输入框 */
+    .personal-summary-table .week-edit-input {
+      width: 100%;
+      min-width: 32px;
+      max-width: 50px;
+      padding: 4px 2px;
+      font-size: 12px;
+      text-align: center;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+
+    .personal-summary-table .week-edit-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(26, 54, 93, 0.1);
+      background: #fffbe6;
+    }
+
+    .personal-summary-table .col-points {
+      color: var(--secondary);
+      font-weight: 600;
+      background: rgba(212, 165, 116, 0.06);
+    }
+
+    .personal-summary-table .col-total-value {
+      font-weight: 700;
+      color: var(--primary);
+      background: rgba(26, 54, 93, 0.08);
+    }
+
+    .personal-summary-table .col-total-points {
+      font-weight: 700;
+      color: var(--secondary);
+      background: rgba(212, 165, 116, 0.15);
+    }
+
+    /* 小计行样式 */
+    .personal-summary-table .subtotal-row {
+      background: linear-gradient(135deg, rgba(26, 54, 93, 0.08) 0%, rgba(212, 165, 116, 0.1) 100%);
+      border-top: 2px solid var(--primary);
+    }
+
+    .personal-summary-table .subtotal-row .col-name-cell {
+      background: linear-gradient(135deg, var(--primary) 0%, #2d4a7c 100%);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .personal-summary-table .col-subtotal-value {
+      font-weight: 700;
+      color: var(--primary);
+      background: rgba(26, 54, 93, 0.1);
+    }
+
+    .personal-summary-table .col-subtotal-points {
+      font-weight: 700;
+      color: var(--secondary);
+      background: rgba(212, 165, 116, 0.18);
+    }
+
+    .personal-summary-table .col-subtotal-value.grand {
+      background: rgba(26, 54, 93, 0.2);
+      font-size: 13px;
+    }
+
+    .personal-summary-table .col-subtotal-points.grand {
+      background: rgba(212, 165, 116, 0.3);
+      font-size: 13px;
+    }
+
+    /* 手机端：个人汇总表格优化 */
+    @media (max-width: 768px) {
+      .personal-summary-table {
+        font-size: 11px;
+        min-width: 860px;
+      }
+      .personal-summary-table th {
+        padding: 6px 3px;
+        font-size: 10px;
+      }
+      .personal-summary-table td {
+        padding: 6px 3px;
+        font-size: 11px;
+      }
+      .personal-summary-table .col-name-cell {
+        min-width: 42px;
+        width: 42px;
+        padding: 6px 4px;
+        font-size: 11px;
+      }
+      .personal-summary-table .col-sub,
+      .personal-summary-table .col-sub-points {
+        font-size: 9px;
+        width: 36px;
+        min-width: 36px;
+      }
+    }
+
     /* 积分小表格 */
     .mini-points-table {
       width: 100%;
@@ -868,6 +1022,201 @@
 
     .mini-points-table input:focus { border-color: var(--secondary); outline: none; }
     .mini-points-table input:disabled { background: #f3f4f6; color: var(--text-secondary); }
+
+    /* 团队汇总横幅表格 */
+    .team-banner-wrapper {
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      margin: 0;
+    }
+
+    .team-banner-title {
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--primary);
+      background: linear-gradient(135deg, rgba(212,165,116,0.1) 0%, rgba(212,165,116,0.03) 100%);
+      border-bottom: 2px solid rgba(212,165,116,0.2);
+      text-align: center;
+    }
+
+    .team-banner-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      max-width: 100%;
+    }
+
+    .team-banner-table {
+      border-collapse: collapse;
+      font-size: 12px;
+      min-width: 1100px;
+      table-layout: fixed;
+    }
+
+    .team-banner-table th {
+      background: linear-gradient(135deg, var(--primary) 0%, #2d4a7c 100%);
+      color: #fff;
+      padding: 7px 4px;
+      font-weight: 600;
+      font-size: 11px;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.15);
+      white-space: nowrap;
+    }
+
+    .team-banner-table td {
+      padding: 7px 4px;
+      text-align: center;
+      border: 1px solid #e8e8e8;
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .team-banner-table .col-name {
+      position: sticky;
+      left: 0;
+      min-width: 70px;
+      width: 70px;
+      padding: 7px 10px;
+      font-weight: 600;
+      text-align: left;
+      background: #fff;
+      z-index: 2;
+    }
+
+    .team-banner-table thead .col-name {
+      background: linear-gradient(135deg, var(--primary) 0%, #2d4a7c 100%) !important;
+      color: #fff;
+      z-index: 3;
+    }
+
+    .team-banner-table .day-group {
+      background: linear-gradient(135deg, #3a5980 0%, #2d4a7c 100%) !important;
+    }
+
+    .team-banner-table .sub-col {
+      background: linear-gradient(135deg, #4a6a90 0%, #3a5980 100%) !important;
+      font-size: 10px !important;
+      font-weight: 500 !important;
+      width: 40px;
+      min-width: 40px;
+    }
+
+    .team-banner-table .total-group,
+    .team-banner-table .total-sub {
+      background: linear-gradient(135deg, var(--secondary) 0%, #a87750 100%) !important;
+    }
+
+    .team-banner-table tbody tr:nth-child(even) {
+      background: #fafbfc;
+    }
+
+    .team-banner-table tbody tr:nth-child(even) .col-name {
+      background: #fafbfc;
+    }
+
+    .team-banner-table tbody tr:hover {
+      background: rgba(212,165,116,0.08);
+    }
+
+    .team-banner-table tbody tr:hover .col-name {
+      background: rgba(212,165,116,0.08);
+    }
+
+    .team-banner-table .col-total {
+      background: rgba(212,165,116,0.15);
+      font-weight: 700;
+      color: var(--secondary);
+      width: 45px;
+      min-width: 45px;
+    }
+
+    .team-banner-table .target-col,
+    .team-banner-table .achieve-col {
+      width: 38px;
+      min-width: 38px;
+      line-height: 1.2;
+    }
+
+    /* 总计列：与目标/达成色块区分，使用深色背景突出 */
+    .team-banner-table .grand-total-col {
+      width: 42px;
+      min-width: 42px;
+      line-height: 1.2;
+      background: linear-gradient(135deg, var(--primary) 0%, #2d4a7c 100%);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .team-banner-table .target-cell {
+      background: rgba(26, 54, 93, 0.06);
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .team-banner-table .achieve-cell {
+      background: rgba(212, 165, 116, 0.12);
+      color: var(--secondary);
+      font-weight: 600;
+    }
+
+    /* 总计单元格：深色背景 + 金色文字，与目标(浅蓝)/达成(浅金)明显区分 */
+    .team-banner-table .grand-total-cell {
+      background: linear-gradient(135deg, rgba(26,54,93,0.85) 0%, rgba(45,74,124,0.85) 100%);
+      color: #ffd700;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .team-banner-table .rate {
+      font-weight: 700;
+      min-width: 50px;
+    }
+
+    .team-banner-table .rate.high { color: var(--success); }
+    .team-banner-table .rate.mid { color: #f59e0b; }
+    .team-banner-table .rate.low { color: var(--error); }
+
+    /* 手机端：横幅表格优化 */
+    @media (max-width: 768px) {
+      .team-banner-table {
+        font-size: 11px;
+        min-width: 880px;
+      }
+      .team-banner-table th {
+        padding: 6px 4px;
+        font-size: 10px;
+      }
+      .team-banner-table td {
+        padding: 6px 4px;
+        font-size: 11px;
+      }
+      .team-banner-table .col-name {
+        min-width: 70px;
+        padding: 6px 8px;
+        font-size: 11px;
+      }
+      .team-banner-table .sub-col {
+        font-size: 9px !important;
+      }
+      .team-banner-table .team-total-row td {
+        padding: 8px 4px;
+        font-size: 11px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .team-banner-table {
+        font-size: 10px;
+        min-width: 860px;
+      }
+      .team-banner-table th { font-size: 9px; padding: 5px 3px; }
+      .team-banner-table td { font-size: 10px; padding: 5px 3px; }
+    }
 
     .section-highlight {
       background: linear-gradient(135deg, rgba(212, 165, 116, 0.1) 0%, rgba(212, 165, 116, 0.05) 100%);
@@ -965,6 +1314,8 @@
       background: #f9fafb;
       border-radius: 10px;
       padding: 12px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     .day-form-title {
@@ -972,6 +1323,43 @@
       font-weight: 600;
       color: var(--text);
       margin-bottom: 10px;
+    }
+
+    /* 上报对象切换栏 */
+    .submit-target-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, rgba(26, 54, 93, 0.06) 0%, rgba(212, 165, 116, 0.08) 100%);
+      border-radius: 8px;
+      border: 1px solid rgba(26, 54, 93, 0.1);
+    }
+
+    .submit-target-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .submit-target-select {
+      flex: 1;
+      padding: 6px 10px;
+      font-size: 13px;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+      cursor: pointer;
+      min-width: 0;
+    }
+
+    .submit-target-select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(26, 54, 93, 0.1);
     }
 
     /* 排行页面 */
@@ -1135,6 +1523,7 @@
       background: var(--card-bg);
       padding: 16px 20px;
       box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+      z-index: 100;
     }
 
     .submit-btn {
@@ -1268,6 +1657,26 @@
       font-weight: 600;
       color: var(--text-secondary);
       margin-bottom: 12px;
+      padding: 10px 14px;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-left: 4px solid var(--primary);
+      border-radius: 0 8px 8px 0;
+      margin-left: -16px;
+      margin-right: -16px;
+    }
+
+    .section-label.shop { border-left-color: var(--primary); }
+    .section-label.member { border-left-color: var(--secondary); }
+    .section-label.rule { border-left-color: #10b981; }
+    .section-label.export { border-left-color: #8b5cf6; }
+
+    /* 管理板块容器 */
+    .admin-section-box {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
     }
 
     .add-member-form { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
@@ -1522,82 +1931,135 @@
     }
 
     /* 移动端优化 - 手机竖屏 */
-    @media (max-width: 480px) {
+    @media (max-width: 768px) {
       body { font-size: 14px; }
-      .login-card { padding: 24px 16px; max-width: 340px; }
+
+      /* 登录页 */
+      .login-card { padding: 28px 20px; max-width: 92%; }
       .login-logo h1 { font-size: 22px; }
       .login-logo p { font-size: 12px; }
-      .form-group input { padding: 12px; font-size: 15px; }
-      .btn-primary { padding: 14px; font-size: 15px; }
+      .form-group { margin-bottom: 16px; }
+      .form-group label { font-size: 13px; margin-bottom: 6px; }
+      .form-group input { padding: 12px 14px; font-size: 16px; border-radius: 10px; }
+      .btn-primary { padding: 14px; font-size: 16px; border-radius: 10px; }
 
-      .app-container { padding-bottom: 60px; }
-      .header { padding: 12px; }
+      /* 主应用容器 */
+      .app-container { padding-bottom: 80px; }
+
+      /* 头部 */
+      .header { padding: 12px 14px; }
       .header-top { flex-wrap: wrap; gap: 8px; }
       .user-avatar { width: 36px; height: 36px; font-size: 15px; }
-      .user-details h3 { font-size: 13px; }
+      .user-details h3 { font-size: 14px; }
       .user-details p { font-size: 11px; }
-      .header-btn { padding: 6px 8px; font-size: 11px; }
-      .header-actions { gap: 4px; }
+      .header-btn { padding: 6px 10px; font-size: 11px; border-radius: 6px; }
+      .header-actions { gap: 6px; }
 
+      /* 标题 */
+      .title-section { margin-bottom: 12px; padding: 0 12px; }
       .main-title { font-size: 18px; }
-      .title-input { font-size: 16px; padding: 8px 12px; }
+      .title-input { font-size: 16px; padding: 8px 12px; max-width: 100%; }
 
+      /* 双栏改单栏 - 关键修改 */
+      .two-column {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-bottom: 12px;
+        padding: 0 12px;
+      }
+
+      /* 卡片 */
+      .column-card { border-radius: 10px; }
+      .column-header { padding: 10px 12px; font-size: 13px; }
+      .column-content { padding: 10px 12px; }
+
+      /* 排行榜 */
       .ranking-section { padding: 10px; margin-bottom: 10px; }
       .ranking-title { font-size: 13px; margin-bottom: 8px; }
-      .ranking-list { padding: 8px; gap: 6px; max-height: 220px; }
-      .ranking-item { padding: 6px 10px; font-size: 11px; gap: 6px; }
-      .ranking-item.champion { padding: 12px; font-size: 12px; }
-      .ranking-item.champion .champion-icon { font-size: 18px; }
-      .ranking-item.champion .champion-points { font-size: 16px; }
+      .ranking-list { padding: 6px; gap: 6px; max-height: none; grid-template-columns: repeat(3, 1fr); }
+      .ranking-list.few-items .ranking-item { min-width: 0; max-width: none; }
+      /* 手机端每行固定3个，保持美观 */
+      .ranking-list.grid-items { grid-template-columns: repeat(3, 1fr); }
+      .ranking-item { padding: 6px 8px; font-size: 12px; gap: 6px; border-radius: 10px; }
+      .ranking-item .rank-block { width: 24px; height: 24px; font-size: 12px; border-radius: 6px; }
 
-      .top-columns { padding: 10px; gap: 10px; }
-      .top-column { padding: 10px; }
-      .column-title { font-size: 13px; margin-bottom: 8px; }
+      /* 表格通用 */
+      .points-table th, .points-table td { padding: 8px 6px; font-size: 12px; }
+      .points-table input { width: 50px; padding: 6px 4px; font-size: 14px; }
 
-      table { font-size: 10px; }
-      th, td { padding: 5px 4px; }
-      .week-data-table th, .week-data-table td { padding: 4px 3px; font-size: 9px; }
+      /* 周数据表格 - 横向滚动 */
+      .week-data-table { font-size: 11px; }
+      .week-data-table th { padding: 8px 4px; font-size: 10px; }
+      .week-data-table td { padding: 8px 4px; font-size: 12px; }
+      .week-data-table td:first-child { padding-left: 8px; font-size: 12px; white-space: nowrap; }
+      .week-data-table input { width: 36px; padding: 6px 2px; font-size: 14px; }
 
-      .points-page { padding: 0 10px; }
-      .target-column-section, .points-column-section { padding: 10px; margin-bottom: 10px; }
-      .section-title { font-size: 13px; margin-bottom: 8px; padding-bottom: 6px; }
+      /* 周积分表格 */
+      .week-points-table th { padding: 6px 3px; font-size: 10px; }
+      .week-points-table td { padding: 6px 3px; font-size: 11px; }
+      .week-points-table td.item-name { padding-left: 6px; font-size: 11px; white-space: nowrap; }
 
-      .data-table th, .data-table td { padding: 6px 4px; font-size: 10px; }
-      .data-table input[type="number"] { padding: 4px 6px; font-size: 11px; }
+      /* 小表格 */
+      .mini-points-table th, .mini-points-table td { padding: 8px 6px; font-size: 12px; }
+      .mini-points-table input { width: 50px; padding: 6px 4px; font-size: 14px; }
 
-      .team-summary-section { padding: 10px; margin-bottom: 10px; }
-      .team-summary-section .section-title { font-size: 13px; margin-bottom: 8px; }
+      /* 目标表格 */
+      .target-table th, .target-table td { padding: 8px 6px; font-size: 12px; }
+      .target-table input { width: 56px; padding: 6px 4px; font-size: 14px; }
 
-      .modal-content { width: 95%; max-width: 400px; padding: 16px; max-height: 90vh; }
+      /* 周数据合计 */
+      .week-data-total { padding: 10px; gap: 8px; flex-wrap: wrap; }
+      .week-data-total .item { padding: 6px 12px; min-width: 60px; }
+      .week-data-total .value { font-size: 16px; }
+
+      /* 底部提交栏 */
+      .bottom-bar { padding: 12px 14px; }
+      .submit-btn { padding: 14px; font-size: 15px; border-radius: 10px; }
+      .submit-btn .total { font-size: 16px; }
+
+      /* 弹窗 */
+      .modal { max-width: 94%; max-height: 85vh; border-radius: 16px; }
+      .modal-header { padding: 14px 16px; }
       .modal-header h3 { font-size: 16px; }
-      .modal-section { padding: 10px 0; }
-      .modal-section h4 { font-size: 13px; margin-bottom: 8px; }
+      .modal-body { padding: 14px 16px; }
+      .modal-footer { padding: 12px 16px; }
+      .section-label { font-size: 12px; margin-bottom: 8px; }
 
-      .input-group { gap: 6px; margin-bottom: 10px; }
-      .input-group input[type="text"], .input-group input[type="number"] {
-        padding: 8px 10px; font-size: 13px;
-      }
-      .btn-secondary { padding: 8px 12px; font-size: 12px; }
-      .btn-danger { padding: 6px 10px; font-size: 11px; }
+      .add-member-form input { padding: 10px; font-size: 14px; border-radius: 8px; }
+      .add-member-form button { padding: 10px 14px; font-size: 13px; border-radius: 8px; }
+      .member-item { padding: 10px; border-radius: 8px; }
 
-      .label { font-size: 11px; }
-      .empty-state { padding: 15px; font-size: 12px; }
+      .target-settings-item { padding: 10px; border-radius: 8px; }
+      .target-settings-item .target-inputs { gap: 8px; }
+      .target-settings-item .target-input-group input { padding: 8px 6px; font-size: 14px; }
 
-      .toast { font-size: 13px; padding: 10px 16px; max-width: 280px; }
+      .rule-settings-item { padding: 10px; border-radius: 8px; }
+      .rule-settings-item .rule-name-input { padding: 8px 10px; font-size: 14px; }
+      .rule-settings-item .rule-points-input,
+      .rule-settings-item .rule-unit-qty-input,
+      .rule-settings-item .rule-unit-input { padding: 6px 8px; font-size: 14px; }
 
-      .qr-modal-content { padding: 16px; max-width: 320px; }
-      .qr-url-copy { font-size: 11px; padding: 10px; }
-      .qr-copy-btn { padding: 10px; font-size: 13px; }
+      .btn-secondary { padding: 10px 14px; font-size: 13px; border-radius: 8px; }
+      .btn-export { padding: 10px 14px; font-size: 12px; border-radius: 8px; }
+
+      /* Toast */
+      .toast { font-size: 13px; padding: 10px 18px; max-width: 300px; border-radius: 10px; }
+
+      /* 表格容器横向滚动 */
+      .column-content { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     }
 
     /* 更小屏幕优化 */
     @media (max-width: 360px) {
-      .ranking-list { max-height: 180px; }
-      .ranking-item.champion { padding: 10px; font-size: 11px; }
-      .week-data-table th, .week-data-table td { font-size: 8px; padding: 3px 2px; }
-      .data-table th, .data-table td { font-size: 9px; padding: 4px 3px; }
+      .ranking-item .rank-block { width: 22px; height: 22px; font-size: 11px; }
+      .week-data-table th, .week-data-table td { font-size: 10px; padding: 6px 2px; }
+      .week-data-table input { width: 30px; font-size: 13px; }
+      .week-points-table th, .week-points-table td { font-size: 10px; }
+      .mini-points-table input { width: 42px; }
+      .target-table input { width: 48px; }
     }
   </style>
+  <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
   <div id="toast" class="toast"></div>
@@ -1613,21 +2075,17 @@
       <div id="step1">
         <div class="form-group">
           <label>手机号码</label>
-          <input type="tel" id="phone" placeholder="请输入手机号" maxlength="11">
+          <input type="tel" id="phone" placeholder="请输入11位手机号" maxlength="11">
+        </div>
+        <div class="form-group">
+          <label>姓名</label>
+          <input type="text" id="realName" placeholder="请输入真实姓名">
         </div>
         <div class="form-group">
           <label>密码</label>
           <input type="password" id="password" placeholder="请输入密码" maxlength="20">
         </div>
         <button class="btn-primary" onclick="verifyLogin()">登 录</button>
-      </div>
-
-      <div id="step2" style="display: none;">
-        <div class="form-group">
-          <label>真实姓名</label>
-          <input type="text" id="realName" placeholder="请输入真实姓名">
-        </div>
-        <button class="btn-primary">完成注册</button>
       </div>
     </div>
   </div>
@@ -1644,8 +2102,9 @@
           </div>
         </div>
         <div class="header-actions">
-          <button class="header-btn" onclick="openQRModal()">📱 扫码参与</button>
+          <button class="header-btn" id="qrBtn" onclick="openQRModal()">📱 扫码参与</button>
           <button class="header-btn" onclick="openAdminModal()" id="adminBtn">⚙️ 管理</button>
+          <button class="header-btn logout-btn" onclick="logout()">🚪 退出登录</button>
         </div>
       </div>
     </div>
@@ -1656,14 +2115,16 @@
       <input type="text" id="titleInput" class="title-input" placeholder="输入标题" style="display:none;" onblur="saveTitle(this.value)">
     </div>
 
-    <!-- 顶部团队汇总区域 -->
-    <div class="two-column" style="margin-bottom: 16px;">
-      <!-- 左栏：团队目标汇总 -->
+    <!-- 顶部团队汇总区域 - 全宽横幅表格 -->
+    <div style="margin-bottom: 16px; padding: 0 12px;">
       <div class="column-card">
-        <div class="column-header">🏢 团队汇总</div>
+        <div class="column-header">📊 团队汇总</div>
         <div class="column-content" id="teamSummaryColumn"></div>
       </div>
-      <!-- 右栏：积分排行榜 -->
+    </div>
+
+    <!-- 积分排行榜 - 全宽 -->
+    <div style="margin-bottom: 16px; padding: 0 12px;">
       <div class="column-card">
         <div class="column-header gold">🏆 积分排行榜</div>
         <div class="ranking-list" id="rankingList"></div>
@@ -1672,57 +2133,76 @@
 
     <!-- 主内容区域 -->
     <div id="reportTab" class="tab-content active">
-      <!-- 目标与达成 -->
-      <div class="two-column">
-        <!-- 左栏：目标达成 -->
+      <!-- 个人过程数据汇总 + 今日上报 -->
+      <div style="padding: 0 12px;">
         <div class="column-card">
-          <div class="column-header">🎯 目标与达成</div>
-          <div class="column-content" id="targetColumn"></div>
-        </div>
-        <!-- 右栏：积分 -->
-        <div class="column-card">
-          <div class="column-header gold">💰 积分统计</div>
+          <div class="column-header gold">📊 个人过程数据汇总</div>
           <div class="column-content" id="pointsColumn"></div>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- 底部提交 -->
-    <div class="bottom-bar" id="bottomBar">
-      <button class="submit-btn" id="submitBtn" onclick="submitAll()" disabled>
-        确认提交 <span class="total">+0 积分</span>
-      </button>
-    </div>
+  <!-- 底部提交（移到appContainer外部，避免transform影响fixed定位） -->
+  <div class="bottom-bar" id="bottomBar" style="display:none;">
+    <button class="submit-btn" id="submitBtn" onclick="submitAll()" disabled>
+      确认提交
+    </button>
   </div>
 
   <!-- 管理弹窗 -->
   <div id="adminModal" class="modal-overlay">
-    <div class="modal">
+    <div class="modal" style="max-width: 600px;">
       <div class="modal-header">
         <h3>⚙️ 后台管理</h3>
         <button class="modal-close" onclick="closeAdminModal()">×</button>
       </div>
-      <div class="modal-body">
-        <div class="section-label">添加成员</div>
-        <div class="add-member-form">
-          <input type="text" id="newMemberName" placeholder="姓名">
-          <input type="tel" id="newMemberPhone" placeholder="手机号" maxlength="11">
-          <button onclick="addMember()">添加</button>
+      <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+        <!-- 门店管理 -->
+        <div class="admin-section-box">
+          <div class="section-label shop">🏪 门店管理</div>
+          <div class="add-member-form" style="margin-bottom: 8px;">
+            <input type="text" id="newShopName" placeholder="门店名称" style="flex:2;" oninput="onShopNameChange()">
+            <input type="text" id="newShopStartDate" placeholder="开始日期" style="flex:1;" oninput="onShopDateInput(this)">
+            <input type="text" id="newShopEndDate" placeholder="结束日期" style="flex:1;" oninput="onShopDateInput(this)">
+            <button onclick="addShop()" id="shopActionBtn" style="flex:0.5;background:var(--success);">添加门店</button>
+          </div>
+          <div style="margin-bottom: 8px;">
+            <button onclick="resetShopForm()" style="padding:6px 12px;font-size:12px;border:1px solid #e5e7eb;border-radius:6px;color:#666;background:#fff;">新建门店</button>
+          </div>
+          <div id="shopList" style="max-height: 200px; overflow-y: auto;"></div>
         </div>
 
-        <div class="section-label">成员列表 (<span id="memberCount">0</span>人)</div>
-        <div id="memberList"></div>
+        <!-- 参与人员管理 -->
+        <div class="admin-section-box">
+          <div class="section-label member">👥 参与人员管理 <span id="currentShopLabel" style="color:var(--secondary);"></span></div>
+          <div id="shopMemberSection" style="display:none;">
+            <div class="add-member-form" style="margin-bottom: 8px;">
+              <input type="text" id="newMemberName" placeholder="姓名" style="flex:1;">
+              <input type="tel" id="newMemberPhone" placeholder="手机号" maxlength="11" style="flex:1;">
+              <button onclick="addMember()" style="flex:0.5;">添加</button>
+            </div>
+            <div id="memberList" style="max-height: 250px; overflow-y: auto;"></div>
+            <div id="memberConfirmBar" style="display:none; margin-top:12px; padding-top:12px; border-top:1px dashed #e5e7eb; text-align:center;">
+              <button onclick="confirmMemberChanges()" style="padding:10px 24px; background:linear-gradient(135deg, var(--success) 0%, #059669 100%); color:#fff; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">✓ 确认保存人员数据</button>
+            </div>
+          </div>
+          <div id="noShopMessage" style="text-align:center;color:#999;padding:20px;font-size:13px;">
+            请先添加门店，再添加参与人员
+          </div>
+        </div>
 
-        <div class="section-label" style="margin-top: 16px;">🎯 设置成员目标</div>
-        <div id="targetSettings"></div>
+        <div class="admin-section-box">
+          <div class="section-label rule">💰 积分规则配置</div>
+          <div id="rulesSettings"></div>
+        </div>
 
-        <div class="section-label" style="margin-top: 16px;">💰 积分规则配置</div>
-        <div id="rulesSettings"></div>
-
-        <div class="section-label" style="margin-top: 16px;">📊 数据导出</div>
-        <div class="export-buttons">
-          <button class="btn-export" onclick="exportData('week')">导出本周数据</button>
-          <button class="btn-export" onclick="exportData('all')">导出全部数据</button>
+        <div class="admin-section-box">
+          <div class="section-label export">📊 数据导出</div>
+          <div class="export-buttons">
+            <button class="btn-export" onclick="exportData('week')">导出本周数据</button>
+            <button class="btn-export" onclick="exportData('all')">导出全部数据</button>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
@@ -1757,11 +2237,12 @@
   <script>
     // 积分配置
     const ELEMENTS = [
+      { type: 'order', name: '订单', unit: '个', rule: '200分/个', pointsPerUnit: 200 },
+      { type: 'invite', name: '邀约', unit: '批', rule: '50分/批', pointsPerUnit: 50 },
+      { type: 'ticket', name: '门票', unit: '个', rule: '100分/个', pointsPerUnit: 100 },
       { type: 'call', name: '呼出', unit: '个', rule: '1分/个', pointsPerUnit: 1 },
       { type: 'mass', name: '群发', unit: '个', rule: '1分/10个', pointsPerUnit: 0.1, maxPoints: 50 },
-      { type: 'invite', name: '邀约', unit: '批', rule: '50分/批', pointsPerUnit: 50 },
       { type: 'test', name: '试驾', unit: '批', rule: '20分/批', pointsPerUnit: 20 },
-      { type: 'ticket', name: '门票', unit: '个', rule: '100分/个', pointsPerUnit: 100 },
       { type: 'delivery', name: '交付', unit: '个', rule: '30分/个', pointsPerUnit: 30 }
     ];
 
@@ -1774,13 +2255,17 @@
 
     let state = {
       currentUser: null,
+      currentShop: null,
       users: [],
+      shops: [],
       records: [],
       values: {},
       targets: {},
       generatedCode: null,
       pendingPhone: null,
-      currentTab: 'report'
+      currentTab: 'report',
+      submitTargetId: null,
+      adminShopId: null
     };
 
     function init() {
@@ -1793,28 +2278,37 @@
       const records = localStorage.getItem('point_records');
       const targets = localStorage.getItem('point_targets');
       const rules = localStorage.getItem('point_rules');
+      const shops = localStorage.getItem('point_shops');
       state.users = users ? JSON.parse(users) : [];
       state.records = records ? JSON.parse(records) : [];
       state.targets = targets ? JSON.parse(targets) : {};
-
-      // 加载积分规则，如果没有则使用默认值
+      state.shops = shops ? JSON.parse(shops) : [];
+      
       if (rules) {
         state.rules = JSON.parse(rules);
       } else {
         state.rules = JSON.parse(JSON.stringify(ELEMENTS));
         saveRules();
       }
+      deduplicateRules();
 
-      // 如果没有任何用户，创建默认管理员
-      if (state.users.length === 0) {
+      const ADMIN_PHONE = '13829218486';
+      const adminUser = state.users.find(u => u.phone === ADMIN_PHONE);
+      if (!adminUser) {
         state.users.push({
           id: 'admin',
-          phone: '1382198486',
+          phone: ADMIN_PHONE,
           name: '成林涛',
           isAdmin: true,
           createdAt: new Date().toISOString()
         });
         saveData();
+      } else {
+        if (!adminUser.isAdmin) {
+          adminUser.isAdmin = true;
+          adminUser.name = '成林涛';
+          saveData();
+        }
       }
     }
 
@@ -1822,6 +2316,7 @@
       localStorage.setItem('point_users', JSON.stringify(state.users));
       localStorage.setItem('point_records', JSON.stringify(state.records));
       localStorage.setItem('point_targets', JSON.stringify(state.targets));
+      localStorage.setItem('point_shops', JSON.stringify(state.shops));
     }
 
     function saveRules() {
@@ -1832,20 +2327,62 @@
       return state.currentUser && state.currentUser.isAdmin === true;
     }
 
+    // 清理 state.rules 中的重复项（按 type 去重，保留第一个）
+    function deduplicateRules() {
+      const seen = new Set();
+      state.rules = state.rules.filter(r => {
+        if (!r || !r.type) return false;
+        if (seen.has(r.type)) return false;
+        seen.add(r.type);
+        return true;
+      });
+    }
+
     function checkAuth() {
       const user = localStorage.getItem('point_current_user');
+      const shop = localStorage.getItem('point_current_shop');
       if (user) {
-        state.currentUser = JSON.parse(user);
+        const parsed = JSON.parse(user);
+        if (parsed && parsed.phone === '13829218486') {
+          parsed.isAdmin = true;
+          parsed.name = '成林涛';
+        }
+        state.currentUser = parsed;
+        if (shop) {
+          state.currentShop = JSON.parse(shop);
+        }
+        state.submitTargetId = null;
         showApp();
       }
     }
 
     function showApp() {
-      document.getElementById('loginPage').classList.remove('active');
-      document.getElementById('appContainer').style.display = 'block';
+      const loginPage = document.getElementById('loginPage');
+      const appContainer = document.getElementById('appContainer');
+      const bottomBar = document.getElementById('bottomBar');
+
+      // 登录页淡出
+      loginPage.classList.add('fading-out');
+
+      // 淡出动画结束后彻底隐藏登录页
+      setTimeout(() => {
+        loginPage.classList.remove('active');
+        loginPage.classList.remove('fading-out');
+        loginPage.style.display = 'none';
+      }, 400);
+
+      // 主应用以进入动画呈现
+      appContainer.style.display = 'block';
+      appContainer.classList.add('entering');
+      setTimeout(() => {
+        appContainer.classList.remove('entering');
+      }, 500);
+
+      // 显示底部提交栏
+      bottomBar.style.display = 'block';
+
       updateUserInfo();
       renderTeamSummaryColumn();
-      renderTargetColumn();
       renderPointsColumn();
       updateBanner();
       loadTitle();
@@ -1859,6 +2396,39 @@
     }
 
     // 渲染团队汇总栏（顶部区域）
+    // 获取单个成员的周数据
+    function getMemberWeekData(userId) {
+      const now = new Date();
+      const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - (dayOfWeek - 1));
+      monday.setHours(0, 0, 0, 0);
+
+      const orderWeek = [0, 0, 0, 0, 0, 0, 0];
+      const inviteWeek = [0, 0, 0, 0, 0, 0, 0];
+      const ticketWeek = [0, 0, 0, 0, 0, 0, 0];
+
+      // 从 state.records 读取数据（与个人过程数据汇总一致）
+      const userRecords = state.records.filter(r => r.userId === userId);
+
+      ['order', 'invite', 'ticket'].forEach(type => {
+        for (let i = 0; i < 7; i++) {
+          const day = new Date(monday);
+          day.setDate(monday.getDate() + i);
+          const dayStr = day.toDateString();
+          const dayValue = userRecords
+            .filter(r => r.elementType === type && new Date(r.date).toDateString() === dayStr)
+            .reduce((sum, r) => sum + r.value, 0);
+          if (type === 'order') orderWeek[i] = dayValue;
+          else if (type === 'invite') inviteWeek[i] = dayValue;
+          else if (type === 'ticket') ticketWeek[i] = dayValue;
+        }
+      });
+
+      return { orderWeek, inviteWeek, ticketWeek };
+    }
+
+    // 渲染团队汇总横幅表格
     function renderTeamSummaryColumn() {
       const container = document.getElementById('teamSummaryColumn');
       if (!state.currentUser) {
@@ -1866,83 +2436,124 @@
         return;
       }
 
-      // 计算团队汇总数据
-      const teamData = getTeamSummary();
+      const members = getCurrentShopMembers();
+      if (members.length === 0) {
+        container.innerHTML = '<div class="empty-state"><p>暂无参与人员</p></div>';
+        return;
+      }
+
+      const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+
+      const membersData = members.map(user => {
+        const targets = getUserTargets(user.id);
+        const weekData = getMemberWeekData(user.id);
+        return {
+          name: user.name,
+          orderTarget: targets.orderTarget || 0,
+          inviteTarget: targets.inviteTarget || 0,
+          ticketTarget: targets.ticketTarget || 0,
+          orderAchieve: targets.orderAchieve || 0,
+          inviteAchieve: targets.inviteAchieve || 0,
+          ticketAchieve: targets.ticketAchieve || 0,
+          orderWeek: weekData.orderWeek,
+          inviteWeek: weekData.inviteWeek,
+          ticketWeek: weekData.ticketWeek
+        };
+      });
+
+      const totals = {
+        orderTarget: 0, inviteTarget: 0, ticketTarget: 0,
+        orderAchieve: 0, inviteAchieve: 0, ticketAchieve: 0,
+        orderWeek: [0,0,0,0,0,0,0],
+        inviteWeek: [0,0,0,0,0,0,0],
+        ticketWeek: [0,0,0,0,0,0,0]
+      };
+      membersData.forEach(m => {
+        totals.orderTarget += m.orderTarget;
+        totals.inviteTarget += m.inviteTarget;
+        totals.ticketTarget += m.ticketTarget;
+        totals.orderAchieve += m.orderAchieve;
+        totals.inviteAchieve += m.inviteAchieve;
+        totals.ticketAchieve += m.ticketAchieve;
+        for (let i = 0; i < 7; i++) {
+          totals.orderWeek[i] += m.orderWeek[i];
+          totals.inviteWeek[i] += m.inviteWeek[i];
+          totals.ticketWeek[i] += m.ticketWeek[i];
+        }
+      });
+
+      function getAchievementRate(target, achieve) {
+        if (!target) return '-';
+        return Math.round((achieve / target) * 100) + '%';
+      }
+      function getRateClass(target, achieve) {
+        if (!target) return '';
+        const rate = achieve / target;
+        if (rate >= 1) return 'high';
+        if (rate >= 0.5) return 'mid';
+        return 'low';
+      }
 
       let html = `
-        <!-- 团队总目标表格 -->
-        <table class="week-data-table" style="font-size: 11px; margin-bottom: 12px;">
-          <thead>
-            <tr>
-              <th>类型</th>
-              <th>订单目标</th>
-              <th>邀约目标</th>
-              <th>门票目标</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>🎯 团队目标</td>
-              <td style="font-weight:600;">${teamData.totalOrderTarget}</td>
-              <td style="font-weight:600;">${teamData.totalInviteTarget}</td>
-              <td style="font-weight:600;">${teamData.totalTicketTarget}</td>
-            </tr>
-            <tr>
-              <td>✅ 团队达成</td>
-              <td>${teamData.totalOrderAchieve}</td>
-              <td>${teamData.totalInviteAchieve}</td>
-              <td>${teamData.totalTicketAchieve}</td>
-            </tr>
-            <tr style="background: rgba(212,165,116,0.08);">
-              <td style="font-weight:700;">📊 达成率</td>
-              <td class="rate ${getRateClass(teamData.totalOrderTarget ? teamData.totalOrderAchieve / teamData.totalOrderTarget : 0)}" style="font-weight:600;">
-                ${teamData.totalOrderTarget ? Math.round((teamData.totalOrderAchieve / teamData.totalOrderTarget) * 100) + '%' : '-'}
-              </td>
-              <td class="rate ${getRateClass(teamData.totalInviteTarget ? teamData.totalInviteAchieve / teamData.totalInviteTarget : 0)}" style="font-weight:600;">
-                ${teamData.totalInviteTarget ? Math.round((teamData.totalInviteAchieve / teamData.totalInviteTarget) * 100) + '%' : '-'}
-              </td>
-              <td class="rate ${getRateClass(teamData.totalTicketTarget ? teamData.totalTicketAchieve / teamData.totalTicketTarget : 0)}" style="font-weight:600;">
-                ${teamData.totalTicketTarget ? Math.round((teamData.totalTicketAchieve / teamData.totalTicketTarget) * 100) + '%' : '-'}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <!-- 团队周一~周日数据统计 -->
-        <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;">📅 团队周一~周日数据</div>
-        <table class="week-data-table" style="font-size: 10px;">
-          <thead>
-            <tr>
-              <th>项目</th>
-              <th>周一</th>
-              <th>周二</th>
-              <th>周三</th>
-              <th>周四</th>
-              <th>周五</th>
-              <th>周六</th>
-              <th>周日</th>
-              <th>合计</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>📋 订单</td>
-              ${teamData.teamOrderWeek.map(v => `<td>${v}</td>`).join('')}
-              <td style="font-weight:700;color:var(--secondary);">${teamData.teamOrderWeek.reduce((a, b) => a + b, 0)}</td>
-            </tr>
-            <tr>
-              <td>🤝 邀约</td>
-              ${teamData.teamInviteWeek.map(v => `<td>${v}</td>`).join('')}
-              <td style="font-weight:700;color:var(--secondary);">${teamData.teamInviteWeek.reduce((a, b) => a + b, 0)}</td>
-            </tr>
-            <tr>
-              <td>🎫 门票</td>
-              ${teamData.teamTicketWeek.map(v => `<td>${v}</td>`).join('')}
-              <td style="font-weight:700;color:var(--secondary);">${teamData.teamTicketWeek.reduce((a, b) => a + b, 0)}</td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="team-banner-wrapper">
+          <div class="team-banner-scroll">
+            <table class="team-banner-table">
+              <thead>
+                <tr>
+                  <th rowspan="2" class="col-name">人员</th>
+                  <th rowspan="2" class="target-col">订单<br>目标</th>
+                  <th rowspan="2" class="target-col">邀约<br>目标</th>
+                  <th rowspan="2" class="target-col">门票<br>目标</th>
+                  <th rowspan="2" class="achieve-col">订单<br>达成</th>
+                  <th rowspan="2" class="achieve-col">邀约<br>达成</th>
+                  <th rowspan="2" class="achieve-col">门票<br>达成</th>
+                  <th rowspan="2" class="grand-total-col">总计</th>
+                  <th rowspan="2" class="rate">达成率</th>
       `;
+
+      weekDays.forEach(day => {
+        html += `<th colspan="3" class="day-group">${day}</th>`;
+      });
+
+      html += `
+                </tr>
+                <tr>
+      `;
+
+      for (let i = 0; i < 7; i++) {
+        html += `<th class="sub-col">订单</th><th class="sub-col">邀约</th><th class="sub-col">门票</th>`;
+      }
+
+      html += `
+                </tr>
+              </thead>
+              <tbody>
+      `;
+
+      // 每个成员一行
+      membersData.forEach(m => {
+        const totalOrder = m.orderWeek.reduce((a,b) => a+b, 0);
+        const totalInvite = m.inviteWeek.reduce((a,b) => a+b, 0);
+        const totalTicket = m.ticketWeek.reduce((a,b) => a+b, 0);
+        // 总计 = 订单达成 + 邀约达成 + 门票达成
+        const grandTotal = m.orderAchieve + m.inviteAchieve + m.ticketAchieve;
+        const rate = getAchievementRate(m.orderTarget, m.orderAchieve);
+        const rateClass = getRateClass(m.orderTarget, m.orderAchieve);
+
+        html += `<tr><td class="col-name">${m.name}</td>`;
+        html += `<td class="target-cell">${m.orderTarget}</td><td class="target-cell">${m.inviteTarget}</td><td class="target-cell">${m.ticketTarget}</td>`;
+        html += `<td class="achieve-cell">${m.orderAchieve}</td><td class="achieve-cell">${m.inviteAchieve}</td><td class="achieve-cell">${m.ticketAchieve}</td>`;
+        html += `<td class="grand-total-cell">${grandTotal}</td>`;
+        html += `<td class="rate ${rateClass}">${rate}</td>`;
+
+        // 每天数据
+        for (let i = 0; i < 7; i++) {
+          html += `<td>${m.orderWeek[i] || '-'}</td><td>${m.inviteWeek[i] || '-'}</td><td>${m.ticketWeek[i] || '-'}</td>`;
+        }
+        html += `</tr>`;
+      });
+
+      html += `</tbody></table></div></div>`;
 
       container.innerHTML = html;
     }
@@ -1969,8 +2580,30 @@
     }
 
     function showLogin() {
-      document.getElementById('loginPage').classList.add('active');
-      document.getElementById('appContainer').style.display = 'none';
+      const loginPage = document.getElementById('loginPage');
+      const appContainer = document.getElementById('appContainer');
+      const bottomBar = document.getElementById('bottomBar');
+      // 恢复登录页显示
+      loginPage.style.display = '';
+      loginPage.classList.add('active');
+      // 隐藏主应用
+      appContainer.style.display = 'none';
+      appContainer.classList.remove('entering');
+      // 隐藏底部提交栏
+      bottomBar.style.display = 'none';
+    }
+
+    // 退出登录，返回登录页
+    function logout() {
+      state.currentUser = null;
+      state.currentShop = null;
+      state.submitTargetId = null;
+      state.values = {};
+      localStorage.removeItem('point_current_user');
+      localStorage.removeItem('point_current_shop');
+      closeAdminModal();
+      showLogin();
+      showToast('已退出登录', 'success');
     }
 
     function updateUserInfo() {
@@ -1986,10 +2619,59 @@
           adminBtn.style.display = 'none';
         }
       }
+      const qrBtn = document.getElementById('qrBtn');
+      if (qrBtn) {
+        if (state.currentUser.isAdmin) {
+          qrBtn.style.display = '';
+        } else {
+          qrBtn.style.display = 'none';
+        }
+      }
     }
 
     // 获取用户目标数据
     function getUserTargets(userId) {
+      // 从 state.shops 中查找当前门店的最新数据
+      let currentShop = state.currentShop;
+      if (state.currentShop) {
+        // 优先从 state.shops 中获取最新引用
+        const latestShop = state.shops.find(s => s.id === state.currentShop.id);
+        if (latestShop) currentShop = latestShop;
+      }
+      
+      if (currentShop && currentShop.members) {
+        const member = currentShop.members.find(m => m.id === userId);
+        if (member) {
+          // 计算本周达成数
+          const now = new Date();
+          const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay();
+          const monday = new Date(now);
+          monday.setDate(now.getDate() - (dayOfWeek - 1));
+          monday.setHours(0, 0, 0, 0);
+
+          const userRecords = state.records.filter(r => r.userId === userId);
+          let orderAchieve = 0, inviteAchieve = 0, ticketAchieve = 0;
+          for (let i = 0; i < 7; i++) {
+            const day = new Date(monday);
+            day.setDate(monday.getDate() + i);
+            const dayStr = day.toDateString();
+            orderAchieve += userRecords.filter(r => r.elementType === 'order' && new Date(r.date).toDateString() === dayStr).reduce((sum, r) => sum + r.value, 0);
+            inviteAchieve += userRecords.filter(r => r.elementType === 'invite' && new Date(r.date).toDateString() === dayStr).reduce((sum, r) => sum + r.value, 0);
+            ticketAchieve += userRecords.filter(r => r.elementType === 'ticket' && new Date(r.date).toDateString() === dayStr).reduce((sum, r) => sum + r.value, 0);
+          }
+          
+          return {
+            orderTarget: member.orderTarget || 0,
+            inviteTarget: member.inviteTarget || 0,
+            ticketTarget: member.ticketTarget || 0,
+            orderAchieve: orderAchieve,
+            inviteAchieve: inviteAchieve,
+            ticketAchieve: ticketAchieve
+          };
+        }
+      }
+      
+      // 兼容旧数据
       if (!state.targets[userId]) {
         state.targets[userId] = {
           orderTarget: 0,
@@ -2000,29 +2682,45 @@
           ticketAchieve: 0
         };
       }
-      
-      // 从周数据中自动计算达成数
+
       const now = new Date();
       const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay();
       const monday = new Date(now);
       monday.setDate(now.getDate() - (dayOfWeek - 1));
       monday.setHours(0, 0, 0, 0);
 
+      const userRecords = state.records.filter(r => r.userId === userId);
       ['order', 'invite', 'ticket'].forEach(type => {
         let total = 0;
         for (let i = 0; i < 7; i++) {
           const day = new Date(monday);
           day.setDate(monday.getDate() + i);
-          const dateStr = day.toISOString().split('T')[0];
-          const key = `week_${userId}_${type}_${dateStr}`;
-          const val = parseInt(localStorage.getItem(key)) || 0;
-          total += val;
+          const dayStr = day.toDateString();
+          const dayValue = userRecords
+            .filter(r => r.elementType === type && new Date(r.date).toDateString() === dayStr)
+            .reduce((sum, r) => sum + r.value, 0);
+          total += dayValue;
         }
         const achieveKey = type + 'Achieve';
         state.targets[userId][achieveKey] = total;
       });
 
       return state.targets[userId];
+    }
+
+    // 获取当前门店的成员列表
+    function getCurrentShopMembers() {
+      if (state.currentShop) {
+        // 优先从 state.shops 中获取最新引用
+        const latestShop = state.shops.find(s => s.id === state.currentShop.id);
+        if (latestShop && latestShop.members) {
+          return latestShop.members;
+        }
+      }
+      if (state.currentShop && state.currentShop.members) {
+        return state.currentShop.members;
+      }
+      return [];
     }
 
     // 获取团队汇总数据
@@ -2044,9 +2742,9 @@
       let totalInviteAchieve = 0;
       let totalTicketAchieve = 0;
 
-      state.users.forEach(user => {
-        // 累加每个用户的目标和达成
-        const targets = getUserTargets(user.id);
+      const members = getCurrentShopMembers();
+      members.forEach(member => {
+        const targets = getUserTargets(member.id);
         totalOrderTarget += targets.orderTarget || 0;
         totalInviteTarget += targets.inviteTarget || 0;
         totalTicketTarget += targets.ticketTarget || 0;
@@ -2054,17 +2752,18 @@
         totalInviteAchieve += targets.inviteAchieve || 0;
         totalTicketAchieve += targets.ticketAchieve || 0;
 
-        // 累加每个用户的周一到周日数据
+        const userRecords = state.records.filter(r => r.userId === member.id);
         ['order', 'invite', 'ticket'].forEach(type => {
           for (let i = 0; i < 7; i++) {
             const day = new Date(monday);
             day.setDate(monday.getDate() + i);
-            const dateStr = day.toISOString().split('T')[0];
-            const key = `week_${user.id}_${type}_${dateStr}`;
-            const val = parseInt(localStorage.getItem(key)) || 0;
-            if (type === 'order') teamOrderWeek[i] += val;
-            else if (type === 'invite') teamInviteWeek[i] += val;
-            else if (type === 'ticket') teamTicketWeek[i] += val;
+            const dayStr = day.toDateString();
+            const dayValue = userRecords
+              .filter(r => r.elementType === type && new Date(r.date).toDateString() === dayStr)
+              .reduce((sum, r) => sum + r.value, 0);
+            if (type === 'order') teamOrderWeek[i] += dayValue;
+            else if (type === 'invite') teamInviteWeek[i] += dayValue;
+            else if (type === 'ticket') teamTicketWeek[i] += dayValue;
           }
         });
       });
@@ -2302,10 +3001,27 @@
       const targets = getUserTargets(state.currentUser.id);
       targets[key] = parseInt(value) || 0;
       saveData();
-      renderTargetColumn();
+      renderTeamSummaryColumn();
     }
 
     // 渲染积分栏
+    // 获取当前上报对象 ID（管理员可切换为任意成员，普通用户为自己）
+    function getSubmitTargetId() {
+      if (state.currentUser && state.currentUser.isAdmin && state.submitTargetId) {
+        return state.submitTargetId;
+      }
+      return state.currentUser ? state.currentUser.id : null;
+    }
+
+    // 获取上报对象用户对象
+    function getSubmitTargetUser() {
+      const id = getSubmitTargetId();
+      // 先从 state.users 查找，再从当前门店成员查找
+      return state.users.find(u => u.id === id) || 
+             (state.currentShop && state.currentShop.members && state.currentShop.members.find(m => m.id === id)) ||
+             state.currentUser;
+    }
+
     function renderPointsColumn() {
       const container = document.getElementById('pointsColumn');
       if (!state.currentUser) {
@@ -2313,97 +3029,213 @@
         return;
       }
 
-      const today = new Date().toDateString();
-      const todayRecords = state.records.filter(r =>
-        r.userId === state.currentUser.id && new Date(r.date).toDateString() === today
-      );
+      // 上报对象：管理员可代填任意成员，普通用户为自己
+      const targetId = getSubmitTargetId();
+      const targetUser = getSubmitTargetUser();
 
-      // 计算总积分
-      const allRecords = state.records.filter(r => r.userId === state.currentUser.id);
-      const totalPoints = allRecords.reduce((sum, r) => sum + r.points, 0);
-      const totalTodayPoints = todayRecords.reduce((sum, r) => sum + r.points, 0);
-
-      // 计算本周一到周日的数据
-      const now = new Date();
-      const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay();
-      const monday = new Date(now);
-      monday.setDate(now.getDate() - (dayOfWeek - 1));
-      monday.setHours(0, 0, 0, 0);
-
-      // 计算当前星期中文名称
+      const today = new Date();
+      const todayStr = today.toDateString();
+      const dayOfWeek = today.getDay() === 0 ? 7 : today.getDay();
       const weekDayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
       const currentDayName = weekDayNames[dayOfWeek - 1];
 
-      const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
-      const weekElementTypes = ['call', 'mass', 'invite', 'test', 'ticket', 'delivery'];
+      // 计算本周一的日期
+      const monday = new Date(today);
+      monday.setDate(today.getDate() - (dayOfWeek - 1));
+      monday.setHours(0, 0, 0, 0);
 
-      // 计算本周每天的各项目数据
+      // 始终按照 ELEMENTS 的顺序，但使用 state.rules 中的配置（如果有）
+      const rules = ELEMENTS.map(defaultEl => {
+        const custom = state.rules ? state.rules.find(r => r.type === defaultEl.type) : null;
+        return custom || defaultEl;
+      });
+
+      // 计算每个项目在周一~周日每天的数值和积分（基于上报对象）
+      // weekData[type][dayIndex] = { value: 数字, points: 数字 }
       const weekData = {};
-      weekElementTypes.forEach(type => {
-        weekData[type] = [];
+      rules.forEach(el => {
+        weekData[el.type] = [];
         for (let i = 0; i < 7; i++) {
           const day = new Date(monday);
           day.setDate(monday.getDate() + i);
           const dayStr = day.toDateString();
           const dayRecords = state.records.filter(r =>
-            r.userId === state.currentUser.id &&
+            r.userId === targetId &&
             new Date(r.date).toDateString() === dayStr &&
-            r.elementType === type
+            r.elementType === el.type
           );
-          weekData[type].push(dayRecords.reduce((sum, r) => sum + r.value, 0));
+          const dayValue = dayRecords.reduce((sum, r) => sum + r.value, 0);
+          const dayPoints = dayRecords.reduce((sum, r) => sum + r.points, 0);
+          weekData[el.type].push({ value: dayValue, points: dayPoints });
         }
       });
 
       // 计算每个项目的周合计
       const weekTotals = {};
-      weekElementTypes.forEach(type => {
-        weekTotals[type] = weekData[type].reduce((sum, v) => sum + v, 0);
+      rules.forEach(el => {
+        weekTotals[el.type] = weekData[el.type].reduce(
+          (acc, d) => ({ value: acc.value + d.value, points: acc.points + d.points }),
+          { value: 0, points: 0 }
+        );
       });
 
+      // 计算每日小计（所有项目在当日的数值与积分之和）
+      const dailySubtotals = [];
+      for (let i = 0; i < 7; i++) {
+        let dayValue = 0;
+        let dayPoints = 0;
+        rules.forEach(el => {
+          dayValue += weekData[el.type][i].value;
+          dayPoints += weekData[el.type][i].points;
+        });
+        dailySubtotals.push({ value: dayValue, points: dayPoints });
+      }
+      // 总计（所有项目、所有天数的总和）
+      const grandTotal = rules.reduce(
+        (acc, el) => ({
+          value: acc.value + weekTotals[el.type].value,
+          points: acc.points + weekTotals[el.type].points
+        }),
+        { value: 0, points: 0 }
+      );
+
+      // 计算今日已提交积分（基于上报对象）
+      const todayRecords = state.records.filter(r =>
+        r.userId === targetId && new Date(r.date).toDateString() === todayStr
+      );
+      const submittedTodayPoints = todayRecords.reduce((sum, r) => sum + r.points, 0);
+
+      // 加上当前正在输入但尚未提交的积分，实现实时同步
+      let pendingTodayPoints = 0;
+      rules.forEach(el => {
+        const val = state.values[el.type] || '';
+        const value = parseInt(val) || 0;
+        if (value <= 0) return;
+        let p = Math.round(value * el.pointsPerUnit);
+        if (el.maxPoints && el.maxPoints > 0) {
+          p = Math.min(p, el.maxPoints);
+        }
+        pendingTodayPoints += p;
+      });
+      const totalTodayPoints = submittedTodayPoints + pendingTodayPoints;
+
+      // ========== 个人过程数据汇总表格 HTML ==========
       let html = `
         <div class="week-points-section">
-          <div class="week-points-title">📊 本周积分统计 (周一~周日)</div>
-          <table class="week-points-table">
-            <thead>
-              <tr>
-                <th>项目</th>
-                <th>周一</th>
-                <th>周二</th>
-                <th>周三</th>
-                <th>周四</th>
-                <th>周五</th>
-                <th>周六</th>
-                <th>周日</th>
-                <th>合计</th>
-              </tr>
-            </thead>
-            <tbody>
+          <div class="week-points-title">📊 本周数据汇总（周一~周日）</div>
+          <div class="personal-summary-scroll">
+            <table class="personal-summary-table">
+              <thead>
+                <tr>
+                  <th rowspan="2" class="col-name-cell">项目</th>
+                  <th colspan="2" class="col-total-group">合计</th>
       `;
 
-      const elementNames = {
-        call: '呼出',
-        mass: '群发',
-        invite: '邀约',
-        test: '试驾',
-        ticket: '门票',
-        delivery: '交付'
-      };
-
-      weekElementTypes.forEach(type => {
-        html += `<tr><td class="item-name">${elementNames[type]}</td>`;
-        for (let i = 0; i < 7; i++) {
-          html += `<td>${weekData[type][i] || '-'}</td>`;
-        }
-        html += `<td class="total">${weekTotals[type] || '-'}</td></tr>`;
-      });
+      // 周一~周日 列头
+      for (let i = 0; i < 7; i++) {
+        html += `<th colspan="2" class="col-day-group">${weekDayNames[i]}</th>`;
+      }
 
       html += `
-            </tbody>
-          </table>
+                </tr>
+                <tr>
+                  <th class="col-sub">数值</th><th class="col-sub-points">积分</th>
+      `;
+
+      // 第二行：每天的 数值 / 积分
+      for (let i = 0; i < 7; i++) {
+        html += `<th class="col-sub">数值</th><th class="col-sub-points">积分</th>`;
+      }
+
+      html += `
+                </tr>
+              </thead>
+              <tbody>
+      `;
+
+      // 每个项目一行
+      const isAdmin = state.currentUser && state.currentUser.isAdmin;
+      // 计算本周一到周日的日期字符串，用于管理员编辑时保存记录
+      const weekDates = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        weekDates.push(d);
+      }
+
+      rules.forEach(el => {
+        html += `<tr><td class="col-name-cell">${el.name}</td>`;
+
+        // 合计列（放在项目之后）
+        const total = weekTotals[el.type];
+        html += `<td class="col-total-value" id="week-total-value-${el.type}">${total.value || '-'}</td>`;
+        html += `<td class="col-total-points" id="week-total-points-${el.type}">${total.points > 0 ? '+' + total.points : '-'}</td>`;
+
+        // 每天的数据
+        for (let i = 0; i < 7; i++) {
+          const d = weekData[el.type][i];
+          if (isAdmin) {
+            // 管理员可编辑任意一天的数值
+            const dateStr = weekDates[i].toISOString().split('T')[0];
+            html += `<td class="col-value"><input type="number" class="week-edit-input" data-type="${el.type}" data-date="${weekDates[i].toDateString()}" data-datestr="${dateStr}" placeholder="0" min="0" value="${d.value || ''}" oninput="onWeekDataChange('${el.type}', '${weekDates[i].toDateString()}', this.value)"></td>`;
+          } else {
+            html += `<td class="col-value">${d.value || '-'}</td>`;
+          }
+          html += `<td class="col-points" id="week-points-${el.type}-${i}">${d.points > 0 ? '+' + d.points : '-'}</td>`;
+        }
+        html += `</tr>`;
+      });
+
+      // 小计行：仅统计每日积分之和（不统计数值小计）
+      html += `<tr class="subtotal-row"><td class="col-name-cell">小计</td>`;
+      // 合计列位置：显示总计积分
+      html += `<td class="col-subtotal-value grand" id="grand-total-value" style="visibility:hidden">-</td>`;
+      html += `<td class="col-subtotal-points grand" id="grand-total-points">${grandTotal.points > 0 ? '+' + grandTotal.points : '-'}</td>`;
+      for (let i = 0; i < 7; i++) {
+        const d = dailySubtotals[i];
+        // 数值小计单元格留空（不统计）
+        html += `<td class="col-subtotal-value" style="visibility:hidden">-</td>`;
+        html += `<td class="col-subtotal-points" id="subtotal-points-${i}">${d.points > 0 ? '+' + d.points : '-'}</td>`;
+      }
+      html += `</tr>`;
+
+      html += `
+              </tbody>
+            </table>
+          </div>
         </div>
 
+        <!-- 今日上报 -->
         <div class="day-form">
           <div class="day-form-title">✏️ 今日上报（${currentDayName}）</div>
+      `;
+
+      // 管理员可切换上报对象（代填数据）
+      if (state.currentUser && state.currentUser.isAdmin) {
+        const members = getCurrentShopMembers();
+        if (members.length > 0) {
+          if (!state.submitTargetId || !members.find(m => m.id === state.submitTargetId)) {
+            state.submitTargetId = members[0].id;
+          }
+          html += `
+            <div class="submit-target-bar">
+              <label class="submit-target-label">上报对象：</label>
+              <select class="submit-target-select" onchange="switchSubmitTarget(this.value)">
+                ${members.map(m => `<option value="${m.id}" ${m.id === state.submitTargetId ? 'selected' : ''}>${m.name}（${m.phone}）</option>`).join('')}
+              </select>
+            </div>
+          `;
+        }
+      } else {
+        // 普通用户：显示自己的名字
+        html += `
+          <div class="submit-target-bar">
+            <span class="submit-target-label">上报人：<strong>${state.currentUser.name}</strong></span>
+          </div>
+        `;
+      }
+
+      html += `
           <table class="mini-points-table">
             <thead>
               <tr>
@@ -2416,33 +3248,25 @@
             <tbody>
       `;
 
-      // 使用可配置的积分规则
-      const rules = state.rules || ELEMENTS;
       rules.forEach(el => {
         const val = state.values[el.type] || '';
-        let points = 0;
         const value = parseInt(val) || 0;
 
-        // 根据配置计算积分
-        if (el.pointsPerUnit > 1) {
-          // X分/Y个 格式：每Y个得X分
-          points = Math.floor(value / el.pointsPerUnit);
-        } else {
-          // 1分/X个 格式：每X个得1分
-          points = Math.round(value * el.pointsPerUnit);
-        }
-        
-        // 如果有上限
+        // 计算积分：pointsPerUnit 表示每单位得多少分，统一用乘法
+        let points = Math.round(value * el.pointsPerUnit);
         if (el.maxPoints && el.maxPoints > 0) {
           points = Math.min(points, el.maxPoints);
         }
 
-        // 生成规则显示文本
+        // 规则显示文本
         let ruleText = '';
-        if (el.pointsPerUnit >= 1) {
+        if (el.pointsPerUnit <= 0) {
+          ruleText = `0分/${el.unit}`;
+        } else if (el.pointsPerUnit >= 1) {
           ruleText = `${el.pointsPerUnit}分/${el.unit}`;
         } else {
-          ruleText = `${el.pointsPerUnit}分/${el.unit}`;
+          const dp = Math.round(1 / el.pointsPerUnit);
+          ruleText = `1分/${dp}${el.unit}`;
         }
         if (el.maxPoints && el.maxPoints > 0) {
           ruleText += ` (上限${el.maxPoints}分)`;
@@ -2453,7 +3277,7 @@
             <td>${el.name}</td>
             <td class="rule">${ruleText}</td>
             <td><input type="number" data-type="${el.type}" placeholder="0" min="0" value="${val}" oninput="onPointsChange('${el.type}', this.value)"></td>
-            <td class="points-cell">+${points}</td>
+            <td class="points-cell" id="points-cell-${el.type}">+${points}</td>
           </tr>
         `;
       });
@@ -2463,7 +3287,7 @@
           </table>
           <div class="target-summary">
             <div class="label">今日已得积分</div>
-            <div class="value achieved">+${totalTodayPoints}</div>
+            <div class="value achieved" id="totalTodayPoints">${totalTodayPoints > 0 ? '+' + totalTodayPoints : '0'}</div>
           </div>
         </div>
       `;
@@ -2473,177 +3297,344 @@
 
     function onPointsChange(type, value) {
       state.values[type] = value;
+      // 不重新渲染整个表格（会导致输入框失焦），仅更新对应积分单元格和今日已得积分
+      const rules = ELEMENTS.map(defaultEl => {
+        const custom = state.rules ? state.rules.find(r => r.type === defaultEl.type) : null;
+        return custom || defaultEl;
+      });
+
+      // 更新当前项目的积分单元格
+      const el = rules.find(r => r.type === type);
+      if (el) {
+        const v = parseInt(value) || 0;
+        let p = Math.round(v * el.pointsPerUnit);
+        if (el.maxPoints && el.maxPoints > 0) {
+          p = Math.min(p, el.maxPoints);
+        }
+        const cell = document.getElementById('points-cell-' + type);
+        if (cell) cell.textContent = '+' + p;
+      }
+
+      // 更新今日已得积分（已提交 + 当前输入中）
+      const targetId = getSubmitTargetId();
+      const todayStr = new Date().toDateString();
+      const todayRecords = state.records.filter(r =>
+        r.userId === targetId && new Date(r.date).toDateString() === todayStr
+      );
+      const submittedPoints = todayRecords.reduce((sum, r) => sum + r.points, 0);
+      let pendingPoints = 0;
+      rules.forEach(r => {
+        const v = parseInt(state.values[r.type]) || 0;
+        if (v <= 0) return;
+        let p = Math.round(v * r.pointsPerUnit);
+        if (r.maxPoints && r.maxPoints > 0) {
+          p = Math.min(p, r.maxPoints);
+        }
+        pendingPoints += p;
+      });
+      const totalEl = document.getElementById('totalTodayPoints');
+      if (totalEl) {
+        const total = submittedPoints + pendingPoints;
+        totalEl.textContent = total > 0 ? '+' + total : '0';
+      }
+
+      updateSubmitBtn();
+    }
+
+    // 管理员修改本周某天某项目的数值（自动生成积分并保存）
+    function onWeekDataChange(type, dayStr, value) {
+      if (!state.currentUser || !state.currentUser.isAdmin) return;
+
+      const targetId = getSubmitTargetId();
+      const v = parseInt(value) || 0;
+      const rules = ELEMENTS.map(defaultEl => {
+        const custom = state.rules ? state.rules.find(r => r.type === defaultEl.type) : null;
+        return custom || defaultEl;
+      });
+      const el = rules.find(r => r.type === type);
+      if (!el) return;
+
+      // 计算积分
+      let points = Math.round(v * el.pointsPerUnit);
+      if (el.maxPoints && el.maxPoints > 0) {
+        points = Math.min(points, el.maxPoints);
+      }
+
+      // 删除当天同用户同类型的旧记录
+      state.records = state.records.filter(r =>
+        !(r.userId === targetId &&
+          new Date(r.date).toDateString() === dayStr &&
+          r.elementType === type)
+      );
+
+      // 如果数值大于0，保存新记录
+      if (v > 0) {
+        // 用当天日期的中午时间保存，避免时区问题
+        const dayDate = new Date(dayStr);
+        dayDate.setHours(12, 0, 0, 0);
+        const record = {
+          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          userId: targetId,
+          elementType: type,
+          value: v,
+          points: points,
+          date: dayDate.toISOString()
+        };
+        state.records.push(record);
+      }
+
+      saveData();
+
+      // 实时更新表格中的积分、合计、小计（不重新渲染整个表格，避免输入框失焦）
+      updateWeekTableDisplay(rules, el, type, dayStr, points, v);
+    }
+
+    // 更新本周数据汇总表格的显示（积分单元格、合计、小计）
+    function updateWeekTableDisplay(rules, currentEl, currentType, dayStr, newPoints, newValue) {
+      // 找到当天是本周第几天
+      const today = new Date();
+      const dayOfWeek = today.getDay() === 0 ? 7 : today.getDay();
+      const monday = new Date(today);
+      monday.setDate(today.getDate() - (dayOfWeek - 1));
+      monday.setHours(0, 0, 0, 0);
+      const targetDate = new Date(dayStr);
+      const dayIndex = Math.round((targetDate - monday) / (24 * 60 * 60 * 1000));
+
+      if (dayIndex < 0 || dayIndex > 6) return;
+
+      // 更新当前项目当天的积分单元格
+      const pointsCell = document.getElementById(`week-points-${currentType}-${dayIndex}`);
+      if (pointsCell) pointsCell.textContent = newPoints > 0 ? '+' + newPoints : '-';
+
+      // 重新计算当前项目的周合计
+      let totalValue = 0;
+      let totalPoints = 0;
+      // 从输入框读取所有天的数值
+      const inputs = document.querySelectorAll(`.week-edit-input[data-type="${currentType}"]`);
+      inputs.forEach((input, idx) => {
+        const val = parseInt(input.value) || 0;
+        totalValue += val;
+        let p = Math.round(val * currentEl.pointsPerUnit);
+        if (currentEl.maxPoints && currentEl.maxPoints > 0) {
+          p = Math.min(p, currentEl.maxPoints);
+        }
+        totalPoints += p;
+      });
+      const totalValueCell = document.getElementById(`week-total-value-${currentType}`);
+      if (totalValueCell) totalValueCell.textContent = totalValue || '-';
+      const totalPointsCell = document.getElementById(`week-total-points-${currentType}`);
+      if (totalPointsCell) totalPointsCell.textContent = totalPoints > 0 ? '+' + totalPoints : '-';
+
+      // 重新计算当天的小计（仅积分，不显示数值小计）
+      let daySubtotalPoints = 0;
+      rules.forEach(r => {
+        const input = document.querySelector(`.week-edit-input[data-type="${r.type}"][data-date="${dayStr}"]`);
+        const val = input ? (parseInt(input.value) || 0) : 0;
+        let p = Math.round(val * r.pointsPerUnit);
+        if (r.maxPoints && r.maxPoints > 0) {
+          p = Math.min(p, r.maxPoints);
+        }
+        daySubtotalPoints += p;
+      });
+      const subtotalPointsCell = document.getElementById(`subtotal-points-${dayIndex}`);
+      if (subtotalPointsCell) subtotalPointsCell.textContent = daySubtotalPoints > 0 ? '+' + daySubtotalPoints : '-';
+
+      // 重新计算总计（仅积分）
+      let grandPoints = 0;
+      rules.forEach(r => {
+        const allInputs = document.querySelectorAll(`.week-edit-input[data-type="${r.type}"]`);
+        allInputs.forEach(input => {
+          const val = parseInt(input.value) || 0;
+          let p = Math.round(val * r.pointsPerUnit);
+          if (r.maxPoints && r.maxPoints > 0) {
+            p = Math.min(p, r.maxPoints);
+          }
+          grandPoints += p;
+        });
+      });
+      const grandPointsCell = document.getElementById('grand-total-points');
+      if (grandPointsCell) grandPointsCell.textContent = grandPoints > 0 ? '+' + grandPoints : '-';
+
+      // 同步更新团队汇总和排行榜
+      renderTeamSummaryColumn();
+      updateBanner();
+    }
+
+    // 管理员切换上报对象
+    function switchSubmitTarget(userId) {
+      state.submitTargetId = userId;
+      state.values = {};  // 清空已填写的数值，避免误填到其他成员
       renderPointsColumn();
       updateSubmitBtn();
     }
 
     function updateSubmitBtn() {
-      let total = 0;
-      const rules = state.rules || ELEMENTS;
+      // 仅判断是否有输入值，控制按钮启用/禁用
+      // 积分显示统一由"今日已得积分"呈现，避免两处计算不一致
+      const rules = ELEMENTS.map(defaultEl => {
+        const custom = state.rules ? state.rules.find(r => r.type === defaultEl.type) : null;
+        return custom || defaultEl;
+      });
+      let hasInput = false;
       rules.forEach(el => {
         const value = parseInt(state.values[el.type]) || 0;
-        if (value <= 0) return;
-        
-        let points = 0;
-        // 根据配置计算积分
-        if (el.pointsPerUnit > 1) {
-          points = Math.floor(value / el.pointsPerUnit);
-        } else {
-          points = Math.round(value * el.pointsPerUnit);
-        }
-        // 如果有上限
-        if (el.maxPoints && el.maxPoints > 0) {
-          points = Math.min(points, el.maxPoints);
-        }
-        total += points;
+        if (value > 0) hasInput = true;
       });
 
       const btn = document.getElementById('submitBtn');
-      btn.disabled = total === 0;
-      btn.querySelector('.total').textContent = '+' + total + ' 积分';
+      btn.disabled = !hasInput;
     }
 
-    // 提交
+    function isUserExpired(user) {
+      if (!user || user.isAdmin) return false;
+      const now = new Date();
+      if (user.startDate && now < new Date(user.startDate)) return true;
+      if (user.endDate && now > new Date(user.endDate)) return true;
+      return false;
+    }
+    
     function submitAll() {
       const today = new Date().toDateString();
-      const todayRecords = state.records.filter(r =>
-        r.userId === state.currentUser.id && new Date(r.date).toDateString() === today
-      );
+      const targetId = getSubmitTargetId();
+      const targetUser = getSubmitTargetUser();
+      
+      if (isUserExpired(targetUser)) {
+        showToast('账号已过期，请联系管理员重新激活', 'error');
+        return;
+      }
 
       let totalPoints = 0;
-      const rules = state.rules || ELEMENTS;
+      const rules = ELEMENTS.map(defaultEl => {
+        const custom = state.rules ? state.rules.find(r => r.type === defaultEl.type) : null;
+        return custom || defaultEl;
+      });
+
+      // 收集本次提交的类型，用于覆盖当天同类型的旧记录
+      const submittedTypes = [];
       rules.forEach(el => {
         const value = parseInt(state.values[el.type]) || 0;
         if (value <= 0) return;
-        
-        let points = 0;
-        // 根据配置计算积分
-        if (el.pointsPerUnit > 1) {
-          points = Math.floor(value / el.pointsPerUnit);
-        } else {
-          points = Math.round(value * el.pointsPerUnit);
-        }
+
+        submittedTypes.push(el.type);
+
+        // 根据配置计算积分：pointsPerUnit 表示每单位得多少分，统一用乘法
+        let points = Math.round(value * el.pointsPerUnit);
         // 如果有上限
         if (el.maxPoints && el.maxPoints > 0) {
           points = Math.min(points, el.maxPoints);
         }
-        
-        if (points > 0) {
-          const record = {
-            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-            userId: state.currentUser.id,
-            elementType: el.type,
-            value: value,
-            points: points,
-            date: new Date().toISOString()
-          };
-          state.records.push(record);
-          totalPoints += points;
-        }
+
+        // 只要填写了数值就保存记录（即使积分为0，数值仍需统计）
+        const record = {
+          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          userId: targetId,
+          elementType: el.type,
+          value: value,
+          points: points,
+          date: new Date().toISOString()
+        };
+        state.records.push(record);
+        totalPoints += points;
       });
 
+      // 覆盖逻辑：当天同用户同类型只保留最新一条记录（以最后一次提交为准）
+      const latestIdMap = {};
+      submittedTypes.forEach(type => {
+        const typeRecords = state.records.filter(r =>
+          r.userId === targetId &&
+          new Date(r.date).toDateString() === today &&
+          r.elementType === type
+        );
+        if (typeRecords.length > 0) {
+          latestIdMap[type] = typeRecords[typeRecords.length - 1].id;
+        }
+      });
+      // 删除当天同用户同类型的所有旧记录（保留最新一条）
+      state.records = state.records.filter(r => {
+        if (r.userId === targetId &&
+            new Date(r.date).toDateString() === today &&
+            submittedTypes.includes(r.elementType)) {
+          return r.id === latestIdMap[r.elementType];
+        }
+        return true;
+      });
+
+      // 只要有数值提交就保存（即使总积分为0）
+      saveData();
+      const targetName = targetUser ? targetUser.name : '';
       if (totalPoints > 0) {
-        saveData();
-        showToast('提交成功 +' + totalPoints + ' 积分', 'success');
-        state.values = {};
-        renderTeamSummaryColumn();
-        renderTargetColumn();
-        renderPointsColumn();
-        updateBanner();
+        showToast(`已为 ${targetName} 提交 +${totalPoints} 积分`, 'success');
+      } else {
+        showToast(`已保存 ${targetName} 的数据`, 'success');
       }
+      state.values = {};
+      renderTeamSummaryColumn();
+      renderPointsColumn();
+      updateBanner();
     }
 
     // 更新顶部 banner
     function updateBanner() {
       if (!state.currentUser) return;
 
-      // 计算所有用户的积分
+      const members = getCurrentShopMembers();
+
       const userPoints = {};
-      state.users.forEach(u => {
+      members.forEach(u => {
         userPoints[u.id] = state.records
           .filter(r => r.userId === u.id)
           .reduce((sum, r) => sum + r.points, 0);
       });
 
-      // 按积分排序
-      const sorted = [...state.users]
+      const sorted = [...members]
         .map(u => ({ ...u, points: userPoints[u.id] || 0 }))
         .sort((a, b) => b.points - a.points);
 
-      // 渲染排行榜
       const rankingList = document.getElementById('rankingList');
-      if (rankingList && sorted.length > 0) {
+      if (rankingList) {
+        if (sorted.length === 0) {
+          rankingList.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">暂无参与人员</div>';
+          return;
+        }
+        
+        rankingList.classList.remove('few-items', 'grid-items');
+        rankingList.classList.add('grid-items');
+
         let html = '';
-
-        // 冠军（第一名）
-        if (sorted[0]) {
-          const champion = sorted[0];
-          const championClass = champion.id === state.currentUser.id ? 'champion current' : 'champion';
+        sorted.forEach((user, idx) => {
+          const rank = idx + 1;
+          const isCurrent = user.id === state.currentUser.id;
+          let rankClass = 'rank-block';
+          if (rank === 1) rankClass += ' rank-1';
+          else if (rank === 2) rankClass += ' rank-2';
+          else if (rank === 3) rankClass += ' rank-3';
+          else rankClass += ' rank-other';
+          const itemClass = isCurrent ? 'ranking-item current' : 'ranking-item';
           html += `
-            <div class="ranking-item ${championClass}">
-              <div class="champion-header">
-                <span class="champion-icon">🏆</span>
-                <span class="champion-label">冠军</span>
-              </div>
-              <span class="rank">${champion.name}</span>
-              <span class="champion-points">${champion.points}</span>
-            </div>
-          `;
-        }
-
-        // 亚军（第二名）
-        if (sorted[1]) {
-          const runnerUp = sorted[1];
-          const runnerUpClass = runnerUp.id === state.currentUser.id ? 'runner-up current' : 'runner-up';
-          html += `
-            <div class="ranking-item ${runnerUpClass}">
-              <span class="runner-up-icon">🥈</span>
-              <span class="runner-up-label">亚军</span>
-              <span class="name">${runnerUp.name}</span>
-              <span class="points">${runnerUp.points}</span>
-            </div>
-          `;
-        }
-
-        // 季军（第三名）
-        if (sorted[2]) {
-          const third = sorted[2];
-          const thirdClass = third.id === state.currentUser.id ? 'third-place current' : 'third-place';
-          html += `
-            <div class="ranking-item ${thirdClass}">
-              <span class="third-place-icon">🥉</span>
-              <span class="third-place-label">季军</span>
-              <span class="name">${third.name}</span>
-              <span class="points">${third.points}</span>
-            </div>
-          `;
-        }
-
-        // 其他排名（第4名及以后）
-        for (let i = 3; i < sorted.length; i++) {
-          const user = sorted[i];
-          const rank = i + 1;
-          const otherClass = user.id === state.currentUser.id ? 'other-rank current' : 'other-rank';
-          html += `
-            <div class="ranking-item ${otherClass}">
-              <span class="other-rank-label">第${rank}名</span>
+            <div class="${itemClass}">
+              <span class="${rankClass}">${rank}</span>
               <span class="name">${user.name}</span>
               <span class="points">${user.points}</span>
             </div>
           `;
-        }
-
+        });
         rankingList.innerHTML = html;
       }
     }
 
-    // 验证登录
     function verifyLogin() {
       const phone = document.getElementById('phone').value.trim();
+      const name = document.getElementById('realName').value.trim();
       const password = document.getElementById('password').value;
+      const ADMIN_PHONE = '13829218486';
 
-      if (!phone || phone.length !== 11) {
-        showToast('请输入正确的手机号', 'error');
+      if (!phone || !/^1[3-9]\d{9}$/.test(phone)) {
+        showToast('请输入正确的11位手机号', 'error');
+        return;
+      }
+
+      if (!name) {
+        showToast('请输入姓名', 'error');
         return;
       }
 
@@ -2657,20 +3648,87 @@
         return;
       }
 
-      // 检查手机号是否在 state.users 列表中
-      const existingUser = state.users.find(u => u.phone === phone);
-      if (existingUser) {
-        // 已存在用户，设置 isAdmin，登录成功
-        existingUser.isAdmin = (phone === '1382198486');
-        state.currentUser = existingUser;
-        localStorage.setItem('point_current_user', JSON.stringify(existingUser));
-        showToast('登录成功', 'success');
+      if (phone === ADMIN_PHONE) {
+        let admin = state.users.find(u => u.phone === ADMIN_PHONE);
+        if (!admin) {
+          admin = {
+            id: 'admin',
+            phone: ADMIN_PHONE,
+            name: '成林涛',
+            isAdmin: true,
+            createdAt: new Date().toISOString()
+          };
+          state.users.push(admin);
+          saveData();
+        }
+        admin.isAdmin = true;
+        admin.name = '成林涛';
+        state.currentUser = admin;
+        // 管理员默认进入第一个有效门店（按有效期筛选）
+        const now = new Date();
+        const validShop = state.shops.find(shop => {
+          if (shop.startDate && now < new Date(shop.startDate)) return false;
+          if (shop.endDate && now > new Date(shop.endDate)) return false;
+          return true;
+        }) || state.shops[0] || null;
+        state.currentShop = validShop;
+        state.adminShopId = validShop ? validShop.id : null;
+        state.submitTargetId = null;
+        localStorage.setItem('point_current_user', JSON.stringify(admin));
+        localStorage.setItem('point_current_shop', JSON.stringify(state.currentShop));
+        saveData();
+        showToast('管理员登录成功', 'success');
         showApp();
         return;
       }
 
-      // 不存在的手机号
-      showToast('无效号码，请联系管理员添加', 'error');
+      // 普通用户：遍历所有门店查找手机号+姓名匹配的人员
+      const matchedShops = [];
+      state.shops.forEach(shop => {
+        const member = shop.members.find(m => m.phone === phone && m.name === name);
+        if (member) {
+          matchedShops.push({ shop, member });
+        }
+      });
+
+      if (matchedShops.length === 0) {
+        showToast('系统中无此人员信息，请联系管理员', 'error');
+        return;
+      }
+
+      // 优先匹配有效期内、积分值最高的门店
+      const now = new Date();
+      const inPeriod = matchedShops.filter(({ shop }) => {
+        if (shop.startDate && now < new Date(shop.startDate)) return false;
+        if (shop.endDate && now > new Date(shop.endDate)) return false;
+        return true;
+      });
+
+      let chosen = null;
+      if (inPeriod.length > 0) {
+        // 取有效期内积分最低的门店（让新门店优先）
+        inPeriod.sort((a, b) => {
+          const aPoints = state.records.filter(r => r.userId === a.member.id).reduce((s, r) => s + r.points, 0);
+          const bPoints = state.records.filter(r => r.userId === b.member.id).reduce((s, r) => s + r.points, 0);
+          return aPoints - bPoints;
+        });
+        chosen = inPeriod[0];
+      } else {
+        // 全部超期则拒绝登录
+        showToast('所在门店活动已结束，无法登录', 'error');
+        return;
+      }
+
+      const shop = chosen.shop;
+      const member = chosen.member;
+
+      state.currentUser = member;
+      state.currentShop = shop;
+      state.submitTargetId = null;
+      localStorage.setItem('point_current_user', JSON.stringify(member));
+      localStorage.setItem('point_current_shop', JSON.stringify(shop));
+      showToast('登录成功', 'success');
+      showApp();
     }
 
     function showToast(message, type = 'info') {
@@ -2685,14 +3743,215 @@
         showToast('无权限访问', 'error');
         return;
       }
-      renderMemberList();
-      renderTargetSettings();
+      resetShopForm();
+      renderShopList();
       renderRulesSettings();
       document.getElementById('adminModal').classList.add('show');
+    }
+    
+    function resetShopForm() {
+      const today = new Date().toISOString().split('T')[0];
+      const nextWeek = new Date();
+      nextWeek.setDate(nextWeek.getDate() + 7);
+      const nextWeekStr = nextWeek.toISOString().split('T')[0];
+      document.getElementById('newShopName').value = '';
+      document.getElementById('newShopStartDate').value = today;
+      document.getElementById('newShopEndDate').value = nextWeekStr;
+      document.getElementById('shopActionBtn').textContent = '添加门店';
+      document.getElementById('shopActionBtn').style.background = 'var(--success)';
+      state.adminShopId = null;
+      document.getElementById('currentShopLabel').textContent = '';
+      document.getElementById('shopMemberSection').style.display = 'none';
+      document.getElementById('noShopMessage').style.display = 'block';
     }
 
     function closeAdminModal() {
       document.getElementById('adminModal').classList.remove('show');
+      // 隐藏确认按钮
+      document.getElementById('memberConfirmBar').style.display = 'none';
+      // 关闭弹窗时同步更新主页数据
+      if (state.currentShop) {
+        const latestShop = state.shops.find(s => s.id === state.currentShop.id);
+        if (latestShop) {
+          state.currentShop = latestShop;
+          localStorage.setItem('point_current_shop', JSON.stringify(state.currentShop));
+        }
+      }
+      // 刷新主页所有视图
+      renderTeamSummaryColumn();
+      renderPointsColumn();
+      updateBanner();
+    }
+
+    function renderShopList() {
+      const list = document.getElementById('shopList');
+      if (state.shops.length === 0) {
+        list.innerHTML = '<div style="text-align:center;color:#999;padding:10px;font-size:13px;">暂无门店</div>';
+        document.getElementById('shopMemberSection').style.display = 'none';
+        document.getElementById('noShopMessage').style.display = 'block';
+        return;
+      }
+      
+      const now = new Date();
+      list.innerHTML = state.shops.map(shop => {
+        let statusClass = 'color:var(--success);';
+        let statusText = '有效';
+        if (shop.startDate && now < new Date(shop.startDate)) {
+          statusText = '未开始';
+          statusClass = 'color:#f59e0b;';
+        } else if (shop.endDate && now > new Date(shop.endDate)) {
+          statusText = '已结束';
+          statusClass = 'color:var(--error);';
+        }
+        const isSelected = state.adminShopId === shop.id;
+        const startDisplay = shop.startDate ? shop.startDate.replace(/-/g, '/') : '无';
+        const endDisplay = shop.endDate ? shop.endDate.replace(/-/g, '/') : '无';
+        return `
+          <div class="member-item" style="cursor:pointer;${isSelected ? 'border:2px solid var(--secondary);' : ''}" onclick="selectShopForAdmin('${shop.id}')">
+            <div class="avatar" style="background:${isSelected ? 'var(--secondary)' : 'var(--primary)'};">${shop.name.charAt(0)}</div>
+            <div class="info" style="flex:1;">
+              <div class="name">${shop.name} <span style="font-size:11px;${statusClass}">[${statusText}]</span></div>
+              <div class="phone">有效期: ${startDisplay} ~ ${endDisplay}</div>
+              <div class="phone">参与人员: ${shop.members ? shop.members.length : 0}人</div>
+            </div>
+            <button class="delete-btn" onclick="event.stopPropagation();deleteShop('${shop.id}')">×</button>
+          </div>
+        `;
+      }).join('');
+      
+      // 仅控制人员管理区域的显示，不再调用 selectShopForAdmin 避免递归
+      if (state.adminShopId) {
+        document.getElementById('shopMemberSection').style.display = 'block';
+        document.getElementById('noShopMessage').style.display = 'none';
+      } else {
+        document.getElementById('shopMemberSection').style.display = 'none';
+        document.getElementById('noShopMessage').style.display = 'block';
+      }
+    }
+
+    function selectShopForAdmin(shopId) {
+      state.adminShopId = shopId;
+      const shop = state.shops.find(s => s.id === shopId);
+      document.getElementById('currentShopLabel').textContent = `当前: ${shop ? shop.name : ''}`;
+      document.getElementById('shopMemberSection').style.display = 'block';
+      document.getElementById('noShopMessage').style.display = 'none';
+      
+      if (shop) {
+        document.getElementById('newShopName').value = shop.name;
+        document.getElementById('newShopStartDate').value = shop.startDate || '';
+        document.getElementById('newShopEndDate').value = shop.endDate || '';
+        document.getElementById('shopActionBtn').textContent = '更新门店';
+        document.getElementById('shopActionBtn').style.background = 'var(--secondary)';
+        
+        // 同步更新 state.currentShop，确保主页数据与后台管理一致
+        state.currentShop = shop;
+        localStorage.setItem('point_current_shop', JSON.stringify(state.currentShop));
+      }
+      
+      renderShopList();
+      renderMemberList();
+      // 实时刷新主页视图
+      renderTeamSummaryColumn();
+      updateBanner();
+      renderPointsColumn();
+    }
+
+    // 日期输入框实时同步到门店数据（支持手动输入）
+    function onShopDateInput(input) {
+      let value = input.value.trim();
+      
+      // 自动格式化：用户输入 20260601 -> 2026-06-01
+      if (/^\d{8}$/.test(value)) {
+        value = value.substring(0, 4) + '-' + value.substring(4, 6) + '-' + value.substring(6, 8);
+        input.value = value;
+      }
+      
+      // 验证格式 YYYY-MM-DD
+      if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(value)) {
+        const parts = value.split('-');
+        const dateStr = parts[0] + '-' + parts[1].padStart(2, '0') + '-' + parts[2].padStart(2, '0');
+        const date = new Date(dateStr);
+        if (!isNaN(date.getTime())) {
+          input.value = dateStr;
+          onShopDateChange();
+        }
+      }
+    }
+
+    // 日期输入框实时同步到门店数据
+    function onShopDateChange() {
+      if (!state.adminShopId) return;
+      const shop = state.shops.find(s => s.id === state.adminShopId);
+      if (!shop) return;
+      
+      shop.startDate = document.getElementById('newShopStartDate').value || null;
+      shop.endDate = document.getElementById('newShopEndDate').value || null;
+      saveData();
+      renderShopList();
+    }
+    
+    // 门店名称实时同步
+    function onShopNameChange() {
+      if (!state.adminShopId) return;
+      const shop = state.shops.find(s => s.id === state.adminShopId);
+      if (!shop) return;
+      
+      shop.name = document.getElementById('newShopName').value.trim() || shop.name;
+      document.getElementById('currentShopLabel').textContent = `当前: ${shop.name}`;
+      saveData();
+      renderShopList();
+    }
+
+    function addShop() {
+      const name = document.getElementById('newShopName').value.trim();
+      const startDate = document.getElementById('newShopStartDate').value;
+      const endDate = document.getElementById('newShopEndDate').value;
+      
+      if (!name) {
+        showToast('请输入门店名称', 'error');
+        return;
+      }
+      
+      // 如果已选中门店，则更新它
+      if (state.adminShopId) {
+        const shop = state.shops.find(s => s.id === state.adminShopId);
+        if (shop) {
+          shop.name = name;
+          shop.startDate = startDate || null;
+          shop.endDate = endDate || null;
+          saveData();
+          renderShopList();
+          showToast('门店信息已更新', 'success');
+          return;
+        }
+      }
+      
+      // 创建新门店
+      const newShop = {
+        id: 'shop_' + Date.now(),
+        name: name,
+        startDate: startDate || null,
+        endDate: endDate || null,
+        members: [],
+        createdAt: new Date().toISOString()
+      };
+      
+      state.shops.push(newShop);
+      state.adminShopId = newShop.id;
+      saveData();
+      renderShopList();
+      showToast('门店添加成功', 'success');
+    }
+
+    function deleteShop(shopId) {
+      if (!confirm('确定要删除该门店吗？删除后无法恢复！')) return;
+      state.shops = state.shops.filter(s => s.id !== shopId);
+      if (state.adminShopId === shopId) {
+        state.adminShopId = null;
+      }
+      saveData();
+      renderShopList();
+      showToast('门店已删除', 'success');
     }
 
     // 打开扫码参与弹窗
@@ -2703,11 +3962,25 @@
       // 获取当前页面URL
       const pageUrl = window.location.href;
 
-      // 使用公共二维码服务生成二维码图片
-      const qrSize = 300;
-      const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}x${qrSize}&data=${encodeURIComponent(pageUrl)}`;
+      // 清空容器
+      container.innerHTML = '';
 
-      container.innerHTML = `<img src="${qrImageUrl}" alt="参与二维码" style="width: ${qrSize}px; height: ${qrSize}px; display: block;">`;
+      // 使用本地二维码库生成二维码（不依赖外部服务）
+      try {
+        new QRCode(container, {
+          text: pageUrl,
+          width: 240,
+          height: 240,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.H
+        });
+      } catch (e) {
+        // 如果库加载失败，回退到国内可用的二维码服务
+        const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(pageUrl)}`;
+        container.innerHTML = `<img src="${qrImageUrl}" alt="参与二维码" style="width: 240px; height: 240px; display: block;">`;
+      }
+
       urlText.textContent = pageUrl;
 
       document.getElementById('qrModal').classList.add('show');
@@ -2736,82 +4009,120 @@
 
     function renderMemberList() {
       const list = document.getElementById('memberList');
-      document.getElementById('memberCount').textContent = state.users.length;
-      if (state.users.length === 0) {
-        list.innerHTML = '<div class="empty-members">暂无成员，请添加</div>';
+      if (!state.adminShopId) {
+        list.innerHTML = '';
         return;
       }
-      list.innerHTML = state.users.map(user => {
-        const targets = getUserTargets(user.id);
-        return `
-        <div class="member-item">
-          <div class="avatar">${user.name.charAt(0)}</div>
-          <div class="info">
-            <div class="name">${user.name}</div>
-            <div class="phone">${user.phone}</div>
-            <div class="targets" style="font-size:11px;color:#6b7280;margin-top:4px;">
-              目标: 订单${targets.orderTarget} 邀约${targets.inviteTarget} 门票${targets.ticketTarget}
+      
+      const shop = state.shops.find(s => s.id === state.adminShopId);
+      if (!shop) {
+        list.innerHTML = '';
+        return;
+      }
+      
+      const members = shop.members || [];
+      if (members.length === 0) {
+        list.innerHTML = '<div class="empty-members">该门店暂无参与人员</div>';
+        return;
+      }
+      
+      list.innerHTML = members.map(member => `
+        <div class="member-item" style="flex-wrap:wrap;align-items:center;">
+          <div class="avatar">${member.name.charAt(0)}</div>
+          <div class="info" style="flex:1;min-width:80px;">
+            <div class="name">${member.name}</div>
+            <div class="phone">${member.phone}</div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;margin-left:auto;">
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <span style="font-size:10px;color:#999;margin-bottom:2px;">订单</span>
+              <input type="number" value="${member.orderTarget || 0}" min="0" 
+                style="width:42px;padding:3px;font-size:12px;border:1px solid #e5e7eb;border-radius:4px;text-align:center;"
+                onchange="updateMemberTarget('${member.id}', 'orderTarget', this.value)">
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <span style="font-size:10px;color:#999;margin-bottom:2px;">邀约</span>
+              <input type="number" value="${member.inviteTarget || 0}" min="0"
+                style="width:42px;padding:3px;font-size:12px;border:1px solid #e5e7eb;border-radius:4px;text-align:center;"
+                onchange="updateMemberTarget('${member.id}', 'inviteTarget', this.value)">
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <span style="font-size:10px;color:#999;margin-bottom:2px;">门票</span>
+              <input type="number" value="${member.ticketTarget || 0}" min="0"
+                style="width:42px;padding:3px;font-size:12px;border:1px solid #e5e7eb;border-radius:4px;text-align:center;"
+                onchange="updateMemberTarget('${member.id}', 'ticketTarget', this.value)">
             </div>
           </div>
-          <button class="delete-btn" onclick="deleteMember('${user.id}')">×</button>
+          <button class="delete-btn" style="margin-left:4px;" onclick="deleteMember('${member.id}')">×</button>
         </div>
-      `;
-      }).join('');
+      `).join('');
     }
 
-    // 渲染目标设置区域
-    function renderTargetSettings() {
-      const container = document.getElementById('targetSettings');
-      const nonAdminUsers = state.users.filter(u => !(u.name === '成林涛' && u.phone === '1382198486'));
-
-      if (nonAdminUsers.length === 0) {
-        container.innerHTML = '<div style="text-align:center;color:#999;padding:20px;">暂无成员，请先添加成员</div>';
-        return;
+    function updateMemberTarget(memberId, targetType, value) {
+      if (!state.adminShopId) return;
+      const shop = state.shops.find(s => s.id === state.adminShopId);
+      if (!shop) return;
+      
+      const member = shop.members.find(m => m.id === memberId);
+      if (member) {
+        member[targetType] = parseInt(value) || 0;
+        saveData();
+        // 同步更新 state.currentShop（主页使用的数据源）
+        if (state.currentShop && state.currentShop.id === shop.id) {
+          const currentMember = state.currentShop.members.find(m => m.id === memberId);
+          if (currentMember) {
+            currentMember[targetType] = member[targetType];
+          }
+          localStorage.setItem('point_current_shop', JSON.stringify(state.currentShop));
+        }
+        // 显示确认按钮
+        document.getElementById('memberConfirmBar').style.display = 'block';
+        // 实时刷新主页视图
+        renderTeamSummaryColumn();
+        updateBanner();
       }
+    }
 
-      let html = '<div class="target-settings-list">';
-
-      nonAdminUsers.forEach(user => {
-        const targets = getUserTargets(user.id);
-        html += `
-          <div class="target-settings-item">
-            <div class="user-name">${user.name}</div>
-            <div class="target-inputs">
-              <div class="target-input-group">
-                <label>订单目标</label>
-                <input type="number" min="0" value="${targets.orderTarget || ''}" 
-                  onchange="updateMemberTarget('${user.id}', 'orderTarget', this.value)">
-              </div>
-              <div class="target-input-group">
-                <label>邀约目标</label>
-                <input type="number" min="0" value="${targets.inviteTarget || ''}" 
-                  onchange="updateMemberTarget('${user.id}', 'inviteTarget', this.value)">
-              </div>
-              <div class="target-input-group">
-                <label>门票目标</label>
-                <input type="number" min="0" value="${targets.ticketTarget || ''}" 
-                  onchange="updateMemberTarget('${user.id}', 'ticketTarget', this.value)">
-              </div>
-            </div>
-          </div>
-        `;
-      });
-
-      html += '</div>';
-      container.innerHTML = html;
+    // 确认保存人员数据
+    function confirmMemberChanges() {
+      showToast('人员数据已确认保存', 'success');
+      document.getElementById('memberConfirmBar').style.display = 'none';
+      // 刷新主页视图
+      renderTeamSummaryColumn();
+      updateBanner();
+      renderPointsColumn();
     }
 
     // 渲染积分规则配置
     function renderRulesSettings() {
       const container = document.getElementById('rulesSettings');
 
+      // 按照 ELEMENTS 的顺序显示默认项目，然后显示自定义项目
+      const defaultTypes = ELEMENTS.map(e => e.type);
+      const customRules = state.rules.filter(r => !defaultTypes.includes(r.type));
+
+      // 构建排序后的规则列表：先默认项目（按ELEMENTS顺序），再自定义项目
+      const sortedRules = [];
+      ELEMENTS.forEach(defaultEl => {
+        const custom = state.rules.find(r => r.type === defaultEl.type);
+        sortedRules.push(custom || defaultEl);
+      });
+      sortedRules.push(...customRules);
+
       let html = '<div class="rules-settings-list">';
       html += '<div class="rules-settings-info" style="font-size:11px;color:#6b7280;margin-bottom:10px;">示例：1分/个 表示每1个得1分，50分/批 表示每批得50分</div>';
 
-      state.rules.forEach((rule, index) => {
-        // 计算显示格式：如果 pointsPerUnit >= 1，则是 X分/Y个；如果是小数如0.1，则是 1分/10个
+      sortedRules.forEach((rule, sortedIndex) => {
+        // 找到该规则在 state.rules 中的实际索引
+        const actualIndex = state.rules.findIndex(r => r.type === rule.type);
+        const isDefault = defaultTypes.includes(rule.type);
+
+        // 计算显示格式：pointsPerUnit = 0时显示 0分/1个；>=1时显示 X分/Y个；小于1且大于0时转换为 1分/N个
         let displayPoints, displayDivisor;
-        if (rule.pointsPerUnit >= 1) {
+        if (rule.pointsPerUnit <= 0) {
+          displayPoints = 0;
+          displayDivisor = 1;
+        } else if (rule.pointsPerUnit >= 1) {
           displayPoints = rule.pointsPerUnit;
           displayDivisor = 1;
         } else {
@@ -2819,24 +4130,25 @@
           displayDivisor = Math.round(1 / rule.pointsPerUnit);
         }
 
+        // 使用 sortedIndex 作为 onchange 调用中的索引，并从 sortedRules 中获取实际值
         html += `
           <div class="rule-settings-item">
             <div class="rule-settings-header">
-              <input type="text" class="rule-name-input" value="${rule.name}" 
-                placeholder="项目名称" onchange="updateRuleName(${index}, this.value)">
-              <button class="rule-delete-btn" onclick="deleteRule(${index})">🗑️</button>
+              <input type="text" class="rule-name-input" value="${rule.name}"
+                placeholder="项目名称" onchange="updateRuleNameByType('${rule.type}', this.value)">
+              ${!isDefault ? `<button class="rule-delete-btn" onclick="deleteRuleByType('${rule.type}')">🗑️</button>` : ''}
             </div>
             <div class="rule-settings-body">
               <div class="rule-input-row">
-                <input type="number" min="1" value="${displayPoints}" class="rule-points-input"
-                  onchange="updateRulePoints(${index}, this.value, ${displayDivisor})">
+                <input type="number" min="0" value="${displayPoints}" class="rule-points-input"
+                  oninput="liveUpdateRulePoints('${rule.type}', this.value, this.parentNode.querySelector('.rule-unit-qty-input').value)">
                 <span class="rule-label">分/</span>
                 <input type="number" min="1" value="${displayDivisor}" class="rule-unit-qty-input"
-                  onchange="updateRulePoints(${index}, ${displayPoints}, this.value)">
-                <input type="text" value="${rule.unit}" class="rule-unit-input" 
-                  placeholder="个/批/人" onchange="updateRuleUnit(${index}, this.value)">
+                  oninput="liveUpdateRulePoints('${rule.type}', this.parentNode.querySelector('.rule-points-input').value, this.value)">
+                <input type="text" value="${rule.unit}" class="rule-unit-input"
+                  placeholder="个/批/人" onchange="updateRuleUnitByType('${rule.type}', this.value)">
               </div>
-              <div class="rule-preview">预览：${displayPoints}分/${displayDivisor}${rule.unit}</div>
+              <div class="rule-preview" data-type="${rule.type}">预览：${displayPoints}分/${displayDivisor}${rule.unit}</div>
             </div>
           </div>
         `;
@@ -2856,10 +4168,104 @@
       renderRulesSettings();
     }
 
-    // 更新积分规则（点数和除数）
+    // 实时更新积分规则（通过 type 查找，支持预览同步更新）
+    function liveUpdateRulePoints(type, points, divisor) {
+      const pointsVal = parseFloat(points);
+      let divisorVal = parseInt(divisor);
+      if (isNaN(divisorVal) || divisorVal < 1) divisorVal = 1;
+      const actualPoints = isNaN(pointsVal) ? 0 : pointsVal;
+
+      const rule = state.rules.find(r => r.type === type);
+      if (rule) {
+        rule.pointsPerUnit = actualPoints / divisorVal;
+      } else {
+        // 不在 state.rules 中，加入（避免渲染时因 state.rules 缺项失效）
+        const defaultEl = ELEMENTS.find(e => e.type === type);
+        if (defaultEl) {
+          state.rules.push({
+            type: defaultEl.type,
+            name: defaultEl.name,
+            unit: defaultEl.unit,
+            pointsPerUnit: actualPoints / divisorVal,
+            maxPoints: defaultEl.maxPoints || 0
+          });
+        }
+      }
+      saveRules();
+
+      // 实时更新预览文本
+      const preview = document.querySelector(`.rule-preview[data-type="${type}"]`);
+      const unitInput = preview ? preview.parentNode.querySelector('.rule-unit-input') : null;
+      const unitVal = unitInput ? unitInput.value : (rule ? rule.unit : '个');
+      if (preview) {
+        if (actualPoints === 0) {
+          preview.textContent = `预览：0分/1${unitVal}`;
+        } else if (actualPoints >= 1) {
+          preview.textContent = `预览：${actualPoints}分/1${unitVal}`;
+        } else {
+          const dp = Math.round(1 / actualPoints);
+          preview.textContent = `预览：1分/${dp}${unitVal}`;
+        }
+      }
+    }
+
+    // 通过 type 更新项目名称
+    function updateRuleNameByType(type, value) {
+      const rule = state.rules.find(r => r.type === type);
+      if (rule) {
+        rule.name = value;
+      } else {
+        const defaultEl = ELEMENTS.find(e => e.type === type);
+        if (defaultEl) {
+          state.rules.push({
+            type: defaultEl.type, name: value, unit: defaultEl.unit,
+            pointsPerUnit: defaultEl.pointsPerUnit, maxPoints: defaultEl.maxPoints || 0
+          });
+        }
+      }
+      saveRules();
+      renderRulesSettings();
+    }
+
+    // 通过 type 更新单位
+    function updateRuleUnitByType(type, value) {
+      const rule = state.rules.find(r => r.type === type);
+      if (rule) {
+        rule.unit = value;
+      } else {
+        const defaultEl = ELEMENTS.find(e => e.type === type);
+        if (defaultEl) {
+          state.rules.push({
+            type: defaultEl.type, name: defaultEl.name, unit: value,
+            pointsPerUnit: defaultEl.pointsPerUnit, maxPoints: defaultEl.maxPoints || 0
+          });
+        }
+      }
+      saveRules();
+      renderRulesSettings();
+    }
+
+    // 通过 type 删除规则
+    function deleteRuleByType(type) {
+      const idx = state.rules.findIndex(r => r.type === type);
+      if (idx >= 0) {
+        state.rules.splice(idx, 1);
+        saveRules();
+        renderRulesSettings();
+        showToast('已删除', 'success');
+      }
+    }
+
+    // 更新积分规则（点数和除数）- 保留旧函数做兼容
     function updateRulePoints(index, points, divisor) {
-      const pointsVal = parseFloat(points) || 1;
-      const divisorVal = parseInt(divisor) || 1;
+      const pointsVal = parseFloat(points);
+      const divisorVal = parseInt(divisor);
+      if (isNaN(divisorVal) || divisorVal < 1) {
+        divisorVal = 1;
+      }
+      if (isNaN(pointsVal)) {
+        pointsVal = 0;
+      }
       state.rules[index].pointsPerUnit = pointsVal / divisorVal;
       saveRules();
       renderRulesSettings();
@@ -2905,18 +4311,6 @@
         renderPointsColumn();
       }
     }
-
-    // 更新成员目标
-    function updateMemberTarget(userId, targetType, value) {
-      const targets = getUserTargets(userId);
-      targets[targetType] = parseInt(value) || 0;
-      saveData();
-      showToast('目标已更新', 'success');
-      renderTeamSummaryColumn();
-      renderTargetColumn();
-      renderMemberList();
-    }
-
     // 导出数据
     function exportData(type) {
       const now = new Date();
@@ -2926,15 +4320,27 @@
       monday.setHours(0, 0, 0, 0);
 
       let csvContent = '';
+      const members = getCurrentShopMembers();
+      const shopName = state.currentShop ? state.currentShop.name : '';
+      const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+      const dateHeaders = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        const dateStr = `${d.getMonth() + 1}/${d.getDate()}`;
+        dateHeaders.push(dateStr);
+      }
 
       if (type === 'week') {
-        // 本周数据
-        const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
-        csvContent = '姓名,类型,' + weekDays.join(',') + ',合计\n';
+        // 本周数据 - 按门店+人员+类型分组
+        csvContent += `门店:${shopName || '未指定'},导出时间:${now.toLocaleString('zh-CN')}\n`;
+        csvContent += '\n';
 
-        state.users.forEach(user => {
-          if (user.name === '成林涛' && user.phone === '1382198486') return;
+        // 第一部分：本周各项目每日数值汇总
+        csvContent += '【本周各项目每日数值汇总】\n';
+        csvContent += '姓名,项目,' + dateHeaders.join(',') + ',本周合计\n';
 
+        members.forEach(member => {
           ['订单', '邀约', '门票'].forEach(itemType => {
             const typeKey = itemType === '订单' ? 'order' : itemType === '邀约' ? 'invite' : 'ticket';
             const values = [];
@@ -2943,23 +4349,82 @@
             for (let i = 0; i < 7; i++) {
               const day = new Date(monday);
               day.setDate(monday.getDate() + i);
-              const dateStr = day.toISOString().split('T')[0];
-              const key = `week_${user.id}_${typeKey}_${dateStr}`;
-              const val = parseInt(localStorage.getItem(key)) || 0;
+              const dayStr = day.toDateString();
+              const val = state.records.filter(r =>
+                r.userId === member.id &&
+                r.elementType === typeKey &&
+                new Date(r.date).toDateString() === dayStr
+              ).reduce((sum, r) => sum + r.value, 0);
               values.push(val);
               total += val;
             }
 
-            csvContent += `${user.name},${itemType},` + values.join(',') + `,${total}\n`;
+            csvContent += `${member.name},${itemType},` + values.join(',') + `,${total}\n`;
           });
         });
-      } else {
-        // 全部数据 - 积分记录
-        csvContent = '日期,时间,姓名,项目,数量,积分\n';
 
-        state.records.forEach(record => {
-          const user = state.users.find(u => u.id === record.userId);
-          const userName = user ? user.name : '未知';
+        csvContent += '\n';
+
+        // 第二部分：目标达成汇总
+        csvContent += '【目标与达成情况】\n';
+        csvContent += '姓名,项目,目标,本周达成,达成率\n';
+        members.forEach(member => {
+          const targets = getUserTargets(member.id);
+          ['订单', '邀约', '门票'].forEach(itemType => {
+            const targetKey = itemType === '订单' ? 'orderTarget' : itemType === '邀约' ? 'inviteTarget' : 'ticketTarget';
+            const achieveKey = itemType === '订单' ? 'orderAchieve' : itemType === '邀约' ? 'inviteAchieve' : 'ticketAchieve';
+            const target = targets[targetKey] || 0;
+            const achieve = targets[achieveKey] || 0;
+            const rate = target > 0 ? Math.round((achieve / target) * 100) + '%' : '-';
+            csvContent += `${member.name},${itemType},${target},${achieve},${rate}\n`;
+          });
+        });
+
+        csvContent += '\n';
+
+        // 第三部分：本周各项目每日积分汇总
+        csvContent += '【本周各项目每日积分汇总】\n';
+        csvContent += '姓名,项目,' + dateHeaders.join(',') + ',本周合计\n';
+
+        members.forEach(member => {
+          ['订单', '邀约', '门票'].forEach(itemType => {
+            const typeKey = itemType === '订单' ? 'order' : itemType === '邀约' ? 'invite' : 'ticket';
+            const values = [];
+            let total = 0;
+
+            for (let i = 0; i < 7; i++) {
+              const day = new Date(monday);
+              day.setDate(monday.getDate() + i);
+              const dayStr = day.toDateString();
+              const val = state.records.filter(r =>
+                r.userId === member.id &&
+                r.elementType === typeKey &&
+                new Date(r.date).toDateString() === dayStr
+              ).reduce((sum, r) => sum + r.points, 0);
+              values.push(val);
+              total += val;
+            }
+
+            csvContent += `${member.name},${itemType},` + values.join(',') + `,${total}\n`;
+          });
+        });
+
+      } else {
+        // 全部数据 - 按时间排序的详细记录
+        csvContent += `门店:${shopName || '未指定'},导出时间:${now.toLocaleString('zh-CN')}\n`;
+        csvContent += '\n';
+
+        // 按用户分组，每个用户的记录按时间排序
+        csvContent += '【全部记录明细】\n';
+        csvContent += '日期,时间,姓名,项目,数量,积分\n';
+
+        const sortedRecords = [...state.records]
+          .filter(r => members.find(m => m.id === r.userId))
+          .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        sortedRecords.forEach(record => {
+          const member = members.find(m => m.id === record.userId);
+          const memberName = member ? member.name : '未知';
           const date = new Date(record.date);
           const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
           const timeStr = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
@@ -2967,23 +4432,33 @@
           const element = rules.find(el => el.type === record.elementType);
           const elementName = element ? element.name : record.elementType;
 
-          csvContent += `${dateStr},${timeStr},${userName},${elementName},${record.value},${record.points}\n`;
+          csvContent += `${dateStr},${timeStr},${memberName},${elementName},${record.value},${record.points}\n`;
         });
 
-        // 添加目标达成数据
-        csvContent += '\n目标达成数据\n';
-        csvContent += '姓名,类型,目标,达成,达成率\n';
-        state.users.forEach(user => {
-          if (user.name === '成林涛' && user.phone === '1382198486') return;
-          const targets = getUserTargets(user.id);
+        csvContent += '\n';
+
+        // 目标达成数据
+        csvContent += '【目标与达成情况】\n';
+        csvContent += '姓名,项目,目标,达成,达成率\n';
+        members.forEach(member => {
+          const targets = getUserTargets(member.id);
           ['订单', '邀约', '门票'].forEach(itemType => {
             const targetKey = itemType === '订单' ? 'orderTarget' : itemType === '邀约' ? 'inviteTarget' : 'ticketTarget';
             const achieveKey = itemType === '订单' ? 'orderAchieve' : itemType === '邀约' ? 'inviteAchieve' : 'ticketAchieve';
             const target = targets[targetKey] || 0;
             const achieve = targets[achieveKey] || 0;
             const rate = target > 0 ? Math.round((achieve / target) * 100) + '%' : '-';
-            csvContent += `${user.name},${itemType},${target},${achieve},${rate}\n`;
+            csvContent += `${member.name},${itemType},${target},${achieve},${rate}\n`;
           });
+        });
+
+        csvContent += '\n';
+
+        // 人员汇总
+        csvContent += '【人员信息汇总】\n';
+        csvContent += '姓名,手机,订单目标,邀约目标,门票目标\n';
+        members.forEach(member => {
+          csvContent += `${member.name},${member.phone},${member.orderTarget || 0},${member.inviteTarget || 0},${member.ticketTarget || 0}\n`;
         });
       }
 
@@ -2993,8 +4468,8 @@
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
       const fileName = type === 'week'
-        ? `本周数据_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.csv`
-        : `全部数据_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.csv`;
+        ? `${shopName || '门店'}_本周数据_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.csv`
+        : `${shopName || '门店'}_全部数据_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.csv`;
       link.setAttribute('download', fileName);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
@@ -3006,52 +4481,80 @@
     }
 
     function addMember() {
+      if (!state.adminShopId) {
+        showToast('请先选择门店', 'error');
+        return;
+      }
+      
       const name = document.getElementById('newMemberName').value.trim();
       const phone = document.getElementById('newMemberPhone').value.trim();
       if (!name) { showToast('请输入姓名', 'error'); return; }
-      if (!phone || phone.length !== 11) { showToast('请输入正确的手机号', 'error'); return; }
-      if (state.users.some(u => u.phone === phone)) { showToast('该手机号已存在', 'error'); return; }
+      if (!phone || !/^1[3-9]\d{9}$/.test(phone)) { showToast('请输入正确的11位手机号', 'error'); return; }
 
-      const newUser = {
-        id: Date.now().toString(),
-        phone: phone,
+      const shop = state.shops.find(s => s.id === state.adminShopId);
+      if (!shop) {
+        showToast('门店不存在', 'error');
+        return;
+      }
+      
+      if (!shop.members) shop.members = [];
+      if (shop.members.some(m => m.phone === phone)) {
+        showToast('该手机号已在当前门店存在', 'error');
+        return;
+      }
+
+      const newMember = {
+        id: 'member_' + Date.now(),
         name: name,
-        registered: false,
-        createdAt: new Date().toISOString()
-      };
-      state.users.push(newUser);
-      // 初始化目标数据
-      state.targets[newUser.id] = {
+        phone: phone,
         orderTarget: 0,
         inviteTarget: 0,
         ticketTarget: 0,
-        orderAchieve: 0,
-        inviteAchieve: 0,
-        ticketAchieve: 0
+        createdAt: new Date().toISOString()
       };
+      
+      shop.members.push(newMember);
       saveData();
+      // 同步更新 state.currentShop
+      if (state.currentShop && state.currentShop.id === shop.id) {
+        state.currentShop = shop;
+        localStorage.setItem('point_current_shop', JSON.stringify(state.currentShop));
+      }
       document.getElementById('newMemberName').value = '';
       document.getElementById('newMemberPhone').value = '';
       renderMemberList();
-      showToast('添加成功', 'success');
+      renderShopList();
+      // 显示确认按钮
+      document.getElementById('memberConfirmBar').style.display = 'block';
+      // 实时刷新主页视图
+      renderTeamSummaryColumn();
+      updateBanner();
+      showToast('人员添加成功', 'success');
     }
 
-    function deleteMember(userId) {
-      if (!confirm('确定要删除该成员吗？')) return;
-      state.users = state.users.filter(u => u.id !== userId);
-      state.records = state.records.filter(r => r.userId !== userId);
-      delete state.targets[userId];
+    function deleteMember(memberId) {
+      if (!confirm('确定要删除该人员吗？')) return;
+      if (!state.adminShopId) return;
+      
+      const shop = state.shops.find(s => s.id === state.adminShopId);
+      if (!shop) return;
+      
+      shop.members = shop.members.filter(m => m.id !== memberId);
+      state.records = state.records.filter(r => r.memberId !== memberId);
       saveData();
-      if (state.currentUser && state.currentUser.id === userId) {
-        state.currentUser = null;
-        localStorage.removeItem('point_current_user');
-        closeAdminModal();
-        showLogin();
-        return;
+      // 同步更新 state.currentShop
+      if (state.currentShop && state.currentShop.id === shop.id) {
+        state.currentShop = shop;
+        localStorage.setItem('point_current_shop', JSON.stringify(state.currentShop));
       }
       renderMemberList();
+      renderShopList();
+      // 显示确认按钮
+      document.getElementById('memberConfirmBar').style.display = 'block';
+      // 实时刷新主页视图
+      renderTeamSummaryColumn();
       updateBanner();
-      showToast('删除成功', 'success');
+      showToast('人员已删除', 'success');
     }
 
     init();
