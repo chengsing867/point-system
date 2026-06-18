@@ -2559,13 +2559,24 @@
       saveCloudData();
     }
 
-    // 保存数据到 GitHub 云端
+    // 保存数据到 GitHub 云端（带自动重试，解决 SHA 冲突）
+    let saveLock = false;  // 保存锁，避免并发保存
+    let pendingSave = null; // 待执行的保存请求
+
     function saveCloudData() {
       // 如果没有 Token，无法保存到云端
       if (!GITHUB_CONFIG.token) {
         console.log('未配置 Token，数据仅保存在本地');
         return;
       }
+
+      // 串行化保存：避免并发请求导致 SHA 冲突
+      if (saveLock) {
+        console.log('⏳ 上一个保存任务进行中，合并到下一个');
+        pendingSave = true;
+        return;
+      }
+      saveLock = true;
       
       const data = {
         users: state.users,
@@ -2586,21 +2597,28 @@
         'Content-Type': 'application/json'
       };
 
-      // 步骤1: 获取当前文件的 sha
-      fetch(`${apiBase}/contents/${GITHUB_CONFIG.path}?ref=${GITHUB_CONFIG.branch}`, { headers })
-      .then(response => {
-        if (response.status === 404) {
-          // 文件不存在，创建新文件
-          return { sha: null };
-        }
-        if (!response.ok) throw new Error('获取文件sha失败: ' + response.status);
-        return response.json();
-      })
-      .then(fileInfo => {
-        const sha = fileInfo.sha;
-        console.log('获取到文件 sha:', sha);
-        
-        // 步骤2: 更新文件
+      // 自动重试：遇到 SHA 冲突时重新获取最新 SHA 并重试
+      let retryCount = 0;
+      const MAX_RETRY = 3;
+      
+      function attemptSave() {
+        // 步骤1: 每次都重新获取最新的 SHA（解决冲突的关键）
+        return fetch(`${apiBase}/contents/${GITHUB_CONFIG.path}?ref=${GITHUB_CONFIG.branch}&t=${Date.now()}`, { headers })
+        .then(response => {
+          if (response.status === 404) {
+            return doUpdate(null);
+          }
+          if (!response.ok) throw new Error('获取文件sha失败: HTTP ' + response.status);
+          return response.json().then(fileInfo => {
+            const sha = fileInfo.sha;
+            console.log(`[尝试${retryCount + 1}] 获取到文件 sha:`, sha);
+            return doUpdate(sha);
+          });
+        })
+        .catch(error => handleError(error));
+      }
+
+      function doUpdate(sha) {
         const body = {
           message: '更新积分系统数据 ' + new Date().toLocaleString('zh-CN'),
           content: content,
@@ -2612,22 +2630,51 @@
           method: 'PUT',
           headers: headers,
           body: JSON.stringify(body)
-        });
-      })
-      .then(response => {
-        if (response.ok) {
-          console.log('✅ 数据已同步到云端');
-          showToast('数据已同步到云端', 'success');
-        } else {
+        })
+        .then(response => {
+          if (response.ok) {
+            return response.json().then(data => {
+              console.log('✅ 数据已同步到云端，commit:', data.commit && data.commit.sha);
+              showToast('数据已同步到云端', 'success');
+              return data;
+            });
+          }
           return response.json().then(err => {
             throw new Error(err.message || 'HTTP ' + response.status);
           });
+        })
+        .catch(error => handleError(error));
+      }
+
+      function handleError(error) {
+        const isSHAConflict = error.message && (error.message.includes('does not match') || error.message.includes('not match') || error.message.includes('SHA'));
+        if (isSHAConflict && retryCount < MAX_RETRY) {
+          retryCount++;
+          console.warn(`[尝试${retryCount}] SHA冲突，1秒后重新获取最新SHA并重试:`, error.message);
+          return new Promise(resolve => setTimeout(resolve, 1000)).then(() => attemptSave());
         }
-      })
-      .catch(error => {
-        console.error('云端保存失败:', error.message);
-        showToast('云端保存失败: ' + error.message, 'error');
-      });
+        if (retryCount < MAX_RETRY) {
+          retryCount++;
+          console.warn(`[尝试${retryCount}] 保存失败，1秒后重试:`, error.message);
+          return new Promise(resolve => setTimeout(resolve, 1000)).then(() => attemptSave());
+        }
+        throw error;
+      }
+
+      attemptSave()
+        .catch(error => {
+          console.error('云端保存失败:', error.message);
+          showToast('云端保存失败: ' + error.message, 'error');
+        })
+        .finally(() => {
+          saveLock = false;
+          // 如果有挂起的保存请求，执行最新一次
+          if (pendingSave) {
+            pendingSave = false;
+            console.log('🔄 执行挂起的保存请求');
+            setTimeout(() => saveCloudData(), 500);
+          }
+        });
     }
 
     function saveRules() {
