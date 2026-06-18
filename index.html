@@ -2287,52 +2287,87 @@
 
     function init() {
       loadData();
+      checkAuth();
     }
 
     function loadData() {
+      // 优先从 localStorage 加载（确保离线可用）
+      const users = localStorage.getItem('point_users');
+      const records = localStorage.getItem('point_records');
+      const targets = localStorage.getItem('point_targets');
+      const rules = localStorage.getItem('point_rules');
+      const shops = localStorage.getItem('point_shops');
+      state.users = users ? JSON.parse(users) : [];
+      state.records = records ? JSON.parse(records) : [];
+      state.targets = targets ? JSON.parse(targets) : {};
+      state.shops = shops ? JSON.parse(shops) : [];
+      
+      if (rules) {
+        state.rules = JSON.parse(rules);
+      } else {
+        state.rules = JSON.parse(JSON.stringify(ELEMENTS));
+        saveRules();
+      }
+      deduplicateRules();
+
+      const ADMIN_PHONE = '13829218486';
+      const adminUser = state.users.find(u => u.phone === ADMIN_PHONE);
+      if (!adminUser) {
+        state.users.push({
+          id: 'admin',
+          phone: ADMIN_PHONE,
+          name: '成林涛',
+          isAdmin: true,
+          createdAt: new Date().toISOString()
+        });
+        saveData();
+      } else {
+        if (!adminUser.isAdmin) {
+          adminUser.isAdmin = true;
+          adminUser.name = '成林涛';
+          saveData();
+        }
+      }
+
+      // 尝试从 Firebase 同步数据（如果已配置）
+      syncFromCloud();
+    }
+
+    // 从云端同步数据
+    function syncFromCloud() {
       db.ref('systemData').once('value').then(snapshot => {
-        const data = snapshot.val() || {};
-        state.users = data.users || [];
-        state.records = data.records || [];
-        state.targets = data.targets || {};
-        state.shops = data.shops || [];
-        
-        if (data.rules) {
-          state.rules = data.rules;
-        } else {
-          state.rules = JSON.parse(JSON.stringify(ELEMENTS));
-          saveData();
+        const cloudData = snapshot.val();
+        if (cloudData) {
+          // 合并云端数据（以云端为准）
+          state.users = cloudData.users || state.users;
+          state.records = cloudData.records || state.records;
+          state.targets = cloudData.targets || state.targets;
+          state.shops = cloudData.shops || state.shops;
+          state.rules = cloudData.rules || state.rules;
+          
+          // 更新本地缓存
+          localStorage.setItem('point_users', JSON.stringify(state.users));
+          localStorage.setItem('point_records', JSON.stringify(state.records));
+          localStorage.setItem('point_targets', JSON.stringify(state.targets));
+          localStorage.setItem('point_shops', JSON.stringify(state.shops));
+          localStorage.setItem('point_rules', JSON.stringify(state.rules));
+          
+          console.log('数据已从云端同步');
         }
-        deduplicateRules();
-
-        const ADMIN_PHONE = '13829218486';
-        const adminUser = state.users.find(u => u.phone === ADMIN_PHONE);
-        if (!adminUser) {
-          state.users.push({
-            id: 'admin',
-            phone: ADMIN_PHONE,
-            name: '成林涛',
-            isAdmin: true,
-            createdAt: new Date().toISOString()
-          });
-          saveData();
-        } else {
-          if (!adminUser.isAdmin) {
-            adminUser.isAdmin = true;
-            adminUser.name = '成林涛';
-            saveData();
-          }
-        }
-
-        checkAuth();
       }).catch(error => {
-        console.error('Failed to load data:', error);
-        showToast('数据加载失败，请检查网络', 'error');
-        checkAuth();
+        // 云端同步失败，使用本地数据
+        console.log('使用本地数据模式');
       });
     }
 
     function saveData() {
+      // 保存到本地
+      localStorage.setItem('point_users', JSON.stringify(state.users));
+      localStorage.setItem('point_records', JSON.stringify(state.records));
+      localStorage.setItem('point_targets', JSON.stringify(state.targets));
+      localStorage.setItem('point_shops', JSON.stringify(state.shops));
+      
+      // 同步到云端
       const data = {
         users: state.users,
         records: state.records,
@@ -2341,12 +2376,13 @@
         rules: state.rules
       };
       db.ref('systemData').set(data).catch(error => {
-        console.error('Failed to save data:', error);
-        showToast('数据保存失败，请检查网络', 'error');
+        // 云端保存失败，数据已保存在本地
+        console.log('数据已保存到本地');
       });
     }
 
     function saveRules() {
+      localStorage.setItem('point_rules', JSON.stringify(state.rules));
       saveData();
     }
 
