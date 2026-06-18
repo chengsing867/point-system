@@ -1,1 +1,1 @@
-{"users":[{"id":"admin","phone":"13829218486","name":"成林涛","isAdmin":true,"createdAt":"2026-06-18T00:00:00.000Z"}],"records":[{"id":"17817763655081nl1hs8p1","userId":"member_1781771102867","elementType":"mass","value":100,"points":10,"date":"2026-06-15T04:00:00.000Z"}],"targets":{},"shops":[],"rules":[],"updatedAt":"2026-06-18T09:52:45.508Z"}
+{"users":[{"id":"admin","phone":"13829218486","name":"成林涛","isAdmin":true,"createdAt":"2026-06-18T00:00:00.000Z"}],"records":[],"targets":{},"shops":[],"rules":[],"updatedAt":"2026-06-18T09:56:49.282Z"}
