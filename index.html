@@ -2346,7 +2346,7 @@
       // 先从本地加载，立即显示界面
       loadLocalData();
       checkAuth();
-      // 异步从云端加载最新数据
+      // 异步从云端加载最新数据（加载完成前禁用登录按钮）
       loadCloudData();
     }
 
@@ -2389,51 +2389,89 @@
       }
     }
 
-    // 从 GitHub 云端加载数据
+    // 从 GitHub 云端加载数据（三层回退：jsdelivr CDN → GitHub API → raw）
     function loadCloudData() {
-      // 使用 raw.githubusercontent.com 直接获取文件内容，避免 API 缓存
-      const rawUrl = `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${GITHUB_CONFIG.path}?t=${Date.now()}`;
-      
-      fetch(rawUrl, {
-        headers: { 'Cache-Control': 'no-cache' }
-      })
-      .then(response => {
-        if (!response.ok) throw new Error('云端数据加载失败: ' + response.status);
-        return response.text();
-      })
-      .then(text => {
+      const loginBtn = document.querySelector('#step1 .btn-primary');
+      const setBtnLoading = (loading) => {
+        if (!loginBtn) return;
+        if (loading) {
+          loginBtn.textContent = '正在同步数据...';
+          loginBtn.disabled = true;
+          loginBtn.style.opacity = '0.6';
+        } else {
+          loginBtn.textContent = '登 录';
+          loginBtn.disabled = false;
+          loginBtn.style.opacity = '1';
+        }
+      };
+      setBtnLoading(true);
+
+      const owner = GITHUB_CONFIG.owner, repo = GITHUB_CONFIG.repo, path = GITHUB_CONFIG.path, branch = GITHUB_CONFIG.branch;
+      const ts = Date.now();
+
+      // 数据源（按优先级）：1.jsdelivr(快/可能有缓存) 2.GitHub API(最新/国内可访问) 3.raw(最新/可能被墙)
+      const sources = [
+        { name: 'jsdelivr', fetch: () => fetchText(`https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/${path}?t=${ts}`) },
+        { name: 'GitHub API', fetch: () => fetchGitHubApi(`https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}&t=${ts}`) },
+        { name: 'raw', fetch: () => fetchText(`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}?t=${ts}`) }
+      ];
+
+      let idx = 0;
+      function tryNext() {
+        if (idx >= sources.length) {
+          console.log('⚠️ 所有云端数据源均失败，使用本地数据');
+          cloudDataLoaded = false;
+          updateCloudStatus();
+          setBtnLoading(false);
+          return;
+        }
+        const src = sources[idx++];
+        src.fetch()
+          .then(text => {
+            console.log(`✅ [${src.name}] 数据加载成功`);
+            applyCloudData(text);
+          })
+          .catch(err => {
+            console.log(`❌ [${src.name}] 加载失败:`, err.message);
+            tryNext();
+          });
+      }
+      tryNext();
+
+      function fetchText(url) {
+        return fetch(url, { headers: { 'Cache-Control': 'no-cache' } })
+          .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.text(); });
+      }
+
+      function fetchGitHubApi(url) {
+        return fetch(url, { headers: { 'Accept': 'application/vnd.github.v3+json' } })
+          .then(res => { if (!res.ok) throw new Error('HTTP ' + res.status); return res.json(); })
+          .then(data => decodeURIComponent(escape(atob((data.content || '').replace(/\n/g, '')))));
+      }
+
+      function applyCloudData(text) {
         const cloudData = JSON.parse(text);
-        
-        // 用云端数据覆盖本地
         state.users = cloudData.users || state.users;
         state.records = cloudData.records || state.records;
         state.targets = cloudData.targets || state.targets;
         state.shops = cloudData.shops || state.shops;
         if (cloudData.rules) state.rules = cloudData.rules;
-        
-        // 保存到本地缓存
         saveLocalData();
         cloudDataLoaded = true;
-        
-        console.log('✅ 云端数据加载成功，门店数:', state.shops.length, '用户数:', state.users.length);
-        // 打印门店和人员信息便于调试
+
+        console.log('云端数据：门店', state.shops.length, '个，用户', state.users.length, '个');
         state.shops.forEach(shop => {
-          console.log(`  门店: ${shop.name}, 人员数: ${shop.members ? shop.members.length : 0}`);
+          console.log(`  门店[${shop.name}] 人员${shop.members ? shop.members.length : 0}人`);
         });
         updateCloudStatus();
-        
-        // 如果已登录，刷新界面
+        setBtnLoading(false);
+
         if (state.currentUser) {
           updateUserInfo();
           renderTeamSummaryColumn();
           updateBanner();
         }
-      })
-      .catch(error => {
-        console.log('使用本地数据模式:', error.message);
-        cloudDataLoaded = false;
-        updateCloudStatus();
-      });
+      }
     }
 
     function loadData() {
