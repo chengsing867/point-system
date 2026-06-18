@@ -2280,23 +2280,34 @@
       try {
         const urlParams = new URLSearchParams(window.location.search);
         const encodedData = urlParams.get('d');
-        if (!encodedData) return;
+        if (!encodedData) {
+          console.log('未检测到URL参数数据');
+          return;
+        }
 
+        console.log('检测到URL参数，开始解码...');
+        console.log('编码数据长度:', encodedData.length);
+        
         const decodedStr = decodeURIComponent(escape(atob(encodedData)));
         const data = JSON.parse(decodedStr);
         
+        console.log('解码成功，数据:', data);
+        
         if (data.shops) {
           localStorage.setItem('point_shops', JSON.stringify(data.shops));
+          console.log('门店数据已导入:', data.shops.length, '个门店');
         }
         if (data.users) {
           localStorage.setItem('point_users', JSON.stringify(data.users));
+          console.log('用户数据已导入:', data.users.length, '个用户');
         }
         
-        // 清除URL参数，避免刷新时重复导入
         history.replaceState(null, '', window.location.pathname);
+        showToast('数据同步成功', 'success');
         return true;
       } catch (e) {
         console.error('导入数据失败:', e);
+        showToast('数据导入失败，请重试', 'error');
         return false;
       }
     }
@@ -3989,50 +4000,67 @@
       const container = document.getElementById('qrImageContainer');
       const urlText = document.getElementById('qrUrlText');
 
-      // 获取当前页面URL
       let pageUrl = window.location.href.split('?')[0].split('#')[0];
 
-      // 把门店和人员数据编码到URL参数中
-      const shopData = {
-        shops: state.shops,
-        users: state.users,
-        generatedAt: new Date().toISOString()
+      // 简化数据结构，只保留必要字段
+      const now = new Date();
+      const exportShops = state.shops.map(shop => ({
+        id: shop.id,
+        name: shop.name,
+        startDate: shop.startDate,
+        endDate: shop.endDate,
+        members: shop.members ? shop.members.map(m => ({
+          id: m.id,
+          name: m.name,
+          phone: m.phone,
+          orderTarget: m.orderTarget || 0,
+          inviteTarget: m.inviteTarget || 0,
+          ticketTarget: m.ticketTarget || 0
+        })) : []
+      }));
+
+      const exportData = {
+        v: 1,
+        shops: exportShops,
+        t: Date.now()
       };
 
       try {
-        // 使用 UTF-8 编码处理中文
-        const jsonStr = JSON.stringify(shopData);
-        const encodedData = encodeURIComponent(btoa(unescape(encodeURIComponent(jsonStr))));
+        const jsonStr = JSON.stringify(exportData);
+        console.log('原始数据长度:', jsonStr.length);
         
-        // 检查 URL 长度（二维码有容量限制）
-        if (encodedData.length > 4000) {
-          // 数据太长，简化为只包含有效门店和人员
-          const now = new Date();
-          const simplifiedShops = state.shops.filter(shop => {
-            const startOk = !shop.startDate || now >= new Date(shop.startDate);
-            const endOk = !shop.endDate || now <= new Date(shop.endDate);
-            return startOk && endOk;
-          });
+        // 使用 UTF-8 编码
+        const encodedData = encodeURIComponent(btoa(unescape(encodeURIComponent(jsonStr))));
+        console.log('编码后长度:', encodedData.length);
+        
+        // 二维码容量限制约 2500 字符（安全起见设为 2000）
+        if (encodedData.length <= 2000) {
+          pageUrl = pageUrl + '?d=' + encodedData;
+          console.log('数据量适中，生成完整二维码');
+        } else {
+          console.log('数据量过大，使用简化模式');
+          // 只保留门店基本信息，去掉人员列表
           const simplifiedData = {
-            shops: simplifiedShops,
-            users: state.users,
-            generatedAt: new Date().toISOString()
+            v: 1,
+            shops: exportShops.map(s => ({
+              id: s.id,
+              name: s.name,
+              startDate: s.startDate,
+              endDate: s.endDate
+            })),
+            t: Date.now(),
+            msg: '数据太多，请联系管理员添加您的信息'
           };
           const simplifiedJson = JSON.stringify(simplifiedData);
           const simplifiedEncoded = encodeURIComponent(btoa(unescape(encodeURIComponent(simplifiedJson))));
           pageUrl = pageUrl + '?d=' + simplifiedEncoded;
-        } else {
-          pageUrl = pageUrl + '?d=' + encodedData;
         }
       } catch (e) {
-        // 编码失败，使用原始URL
         console.error('数据编码失败:', e);
       }
 
-      // 清空容器
       container.innerHTML = '';
 
-      // 使用本地二维码库生成二维码（不依赖外部服务）
       try {
         new QRCode(container, {
           text: pageUrl,
@@ -4043,7 +4071,6 @@
           correctLevel: QRCode.CorrectLevel.H
         });
       } catch (e) {
-        // 如果库加载失败，回退到国内可用的二维码服务
         const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(pageUrl)}`;
         container.innerHTML = `<img src="${qrImageUrl}" alt="参与二维码" style="width: 240px; height: 240px; display: block;">`;
       }
