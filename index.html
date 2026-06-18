@@ -2204,6 +2204,22 @@
             <button class="btn-export" onclick="exportData('all')">导出全部数据</button>
           </div>
         </div>
+
+        <!-- 云端配置 -->
+        <div class="admin-section-box">
+          <div class="section-label" style="border-left-color: #8b5cf6;">☁️ 云端同步配置</div>
+          <div style="padding: 12px; background: #f8f9fa; border-radius: 8px; margin-bottom: 8px;">
+            <div id="cloudStatus" style="font-size: 12px; color: #666; margin-bottom: 8px;"></div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <input type="password" id="githubTokenInput" placeholder="输入 GitHub Token (ghp_...)" style="flex:1; padding:8px 12px; border:1px solid #e5e7eb; border-radius:6px; font-size:13px;">
+              <button onclick="saveGitHubToken()" style="padding:8px 16px; background:#8b5cf6; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:13px;">保存</button>
+            </div>
+            <div style="font-size: 11px; color: #999; margin-top: 8px;">
+              配置 Token 后，数据将自动同步到云端，扫码即可登录使用<br>
+              <a href="https://github.com/settings/tokens" target="_blank" style="color: #8b5cf6;">点击创建 Token</a>（勾选 repo 权限）
+            </div>
+          </div>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" onclick="closeAdminModal()">关闭</button>
@@ -2253,6 +2269,62 @@
       { type: 'ticket', name: '门票', targetKey: 'ticketTarget', achieveKey: 'ticketAchieve' }
     ];
 
+    // GitHub API 配置（用于云端数据共享）
+    // Token 通过环境变量或运行时配置获取，避免硬编码在代码中
+    const GITHUB_CONFIG = {
+      token: '',  // 运行时从 localStorage 或用户输入获取
+      owner: 'chengsing867',
+      repo: 'point-system',
+      path: 'data.json',
+      branch: 'main'
+    };
+
+    // 初始化 GitHub Token
+    function initGitHubToken() {
+      // 优先从 localStorage 获取
+      const savedToken = localStorage.getItem('github_token');
+      if (savedToken) {
+        GITHUB_CONFIG.token = savedToken;
+        return true;
+      }
+      return false;
+    }
+
+    // 设置 GitHub Token（管理员首次使用时调用）
+    function setGitHubToken(token) {
+      GITHUB_CONFIG.token = token;
+      localStorage.setItem('github_token', token);
+    }
+
+    // 保存 GitHub Token（从管理界面输入）
+    function saveGitHubToken() {
+      const token = document.getElementById('githubTokenInput').value.trim();
+      if (!token) {
+        showToast('请输入 Token', 'error');
+        return;
+      }
+      setGitHubToken(token);
+      showToast('Token 保存成功，正在同步数据...', 'success');
+      updateCloudStatus();
+      loadCloudData();
+    }
+
+    // 更新云端状态显示
+    function updateCloudStatus() {
+      const statusEl = document.getElementById('cloudStatus');
+      if (!statusEl) return;
+      if (GITHUB_CONFIG.token) {
+        statusEl.innerHTML = '✅ 已配置 Token，数据将自动同步到云端<br>状态: ' + (cloudDataLoaded ? '云端连接正常' : '正在连接...');
+        statusEl.style.color = '#10b981';
+      } else {
+        statusEl.innerHTML = '⚠️ 未配置 Token，数据仅保存在本地，无法扫码共享';
+        statusEl.style.color = '#ef4444';
+      }
+    }
+
+    // 云端数据加载状态
+    let cloudDataLoaded = false;
+
     let state = {
       currentUser: null,
       currentShop: null,
@@ -2269,51 +2341,17 @@
     };
 
     function init() {
-      // 检查URL参数中的数据（扫码后导入）
-      importDataFromURL();
-      loadData();
+      // 初始化 GitHub Token
+      initGitHubToken();
+      // 先从本地加载，立即显示界面
+      loadLocalData();
       checkAuth();
+      // 异步从云端加载最新数据
+      loadCloudData();
     }
 
-    // 从URL参数导入数据（扫码后自动同步）
-    function importDataFromURL() {
-      try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const encodedData = urlParams.get('d');
-        if (!encodedData) {
-          console.log('未检测到URL参数数据');
-          return;
-        }
-
-        console.log('检测到URL参数，开始解码...');
-        console.log('编码数据长度:', encodedData.length);
-        
-        const decodedStr = decodeURIComponent(escape(atob(encodedData)));
-        const data = JSON.parse(decodedStr);
-        
-        console.log('解码成功，数据:', data);
-        
-        if (data.shops) {
-          localStorage.setItem('point_shops', JSON.stringify(data.shops));
-          console.log('门店数据已导入:', data.shops.length, '个门店');
-        }
-        if (data.users) {
-          localStorage.setItem('point_users', JSON.stringify(data.users));
-          console.log('用户数据已导入:', data.users.length, '个用户');
-        }
-        
-        history.replaceState(null, '', window.location.pathname);
-        showToast('数据同步成功', 'success');
-        return true;
-      } catch (e) {
-        console.error('导入数据失败:', e);
-        showToast('数据导入失败，请重试', 'error');
-        return false;
-      }
-    }
-
-    function loadData() {
-      // 优先从 localStorage 加载（确保离线可用）
+    // 从本地存储加载数据
+    function loadLocalData() {
       const users = localStorage.getItem('point_users');
       const records = localStorage.getItem('point_records');
       const targets = localStorage.getItem('point_targets');
@@ -2328,7 +2366,6 @@
         state.rules = JSON.parse(rules);
       } else {
         state.rules = JSON.parse(JSON.stringify(ELEMENTS));
-        saveRules();
       }
       deduplicateRules();
 
@@ -2342,25 +2379,137 @@
           isAdmin: true,
           createdAt: new Date().toISOString()
         });
-        saveData();
+        saveLocalData();
       } else {
         if (!adminUser.isAdmin) {
           adminUser.isAdmin = true;
           adminUser.name = '成林涛';
-          saveData();
+          saveLocalData();
         }
       }
     }
 
-    function saveData() {
+    // 从 GitHub 云端加载数据
+    function loadCloudData() {
+      const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.path}?ref=${GITHUB_CONFIG.branch}`;
+      
+      fetch(url, {
+        headers: {
+          'Authorization': `token ${GITHUB_CONFIG.token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      })
+      .then(response => {
+        if (!response.ok) throw new Error('云端数据加载失败');
+        return response.json();
+      })
+      .then(data => {
+        // GitHub API 返回 base64 编码的内容
+        const content = decodeURIComponent(escape(atob(data.content.replace(/\n/g, ''))));
+        const cloudData = JSON.parse(content);
+        
+        // 用云端数据覆盖本地
+        state.users = cloudData.users || state.users;
+        state.records = cloudData.records || state.records;
+        state.targets = cloudData.targets || state.targets;
+        state.shops = cloudData.shops || state.shops;
+        if (cloudData.rules) state.rules = cloudData.rules;
+        
+        // 保存到本地缓存
+        saveLocalData();
+        cloudDataLoaded = true;
+        
+        console.log('云端数据加载成功');
+        // 如果已登录，刷新界面
+        if (state.currentUser) {
+          updateUserInfo();
+          renderTeamSummaryColumn();
+          updateBanner();
+        }
+      })
+      .catch(error => {
+        console.log('使用本地数据模式:', error.message);
+        cloudDataLoaded = false;
+      });
+    }
+
+    function loadData() {
+      loadLocalData();
+    }
+
+    // 保存到本地存储
+    function saveLocalData() {
       localStorage.setItem('point_users', JSON.stringify(state.users));
       localStorage.setItem('point_records', JSON.stringify(state.records));
       localStorage.setItem('point_targets', JSON.stringify(state.targets));
       localStorage.setItem('point_shops', JSON.stringify(state.shops));
+      localStorage.setItem('point_rules', JSON.stringify(state.rules));
+    }
+
+    // 保存数据（本地 + 云端）
+    function saveData() {
+      // 先保存到本地
+      saveLocalData();
+      
+      // 异步保存到 GitHub 云端
+      saveCloudData();
+    }
+
+    // 保存数据到 GitHub 云端
+    function saveCloudData() {
+      const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.path}`;
+      
+      const data = {
+        users: state.users,
+        records: state.records,
+        targets: state.targets,
+        shops: state.shops,
+        rules: state.rules,
+        updatedAt: new Date().toISOString()
+      };
+
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+
+      // 先获取当前文件的 sha（更新文件需要）
+      fetch(url + `?ref=${GITHUB_CONFIG.branch}`, {
+        headers: {
+          'Authorization': `token ${GITHUB_CONFIG.token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      })
+      .then(response => response.json())
+      .then(fileInfo => {
+        // 更新文件
+        return fetch(url, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `token ${GITHUB_CONFIG.token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: '更新积分系统数据',
+            content: content,
+            sha: fileInfo.sha,
+            branch: GITHUB_CONFIG.branch
+          })
+        });
+      })
+      .then(response => {
+        if (response.ok) {
+          console.log('数据已同步到云端');
+        } else {
+          console.log('云端同步失败');
+        }
+      })
+      .catch(error => {
+        console.log('云端保存失败，数据已保存在本地:', error.message);
+      });
     }
 
     function saveRules() {
-      localStorage.setItem('point_rules', JSON.stringify(state.rules));
+      saveLocalData();
+      saveCloudData();
     }
 
     function isCurrentUserAdmin() {
@@ -3787,6 +3936,7 @@
       resetShopForm();
       renderShopList();
       renderRulesSettings();
+      updateCloudStatus();
       document.getElementById('adminModal').classList.add('show');
     }
     
@@ -4000,64 +4150,8 @@
       const container = document.getElementById('qrImageContainer');
       const urlText = document.getElementById('qrUrlText');
 
-      let pageUrl = window.location.href.split('?')[0].split('#')[0];
-
-      // 简化数据结构，只保留必要字段
-      const now = new Date();
-      const exportShops = state.shops.map(shop => ({
-        id: shop.id,
-        name: shop.name,
-        startDate: shop.startDate,
-        endDate: shop.endDate,
-        members: shop.members ? shop.members.map(m => ({
-          id: m.id,
-          name: m.name,
-          phone: m.phone,
-          orderTarget: m.orderTarget || 0,
-          inviteTarget: m.inviteTarget || 0,
-          ticketTarget: m.ticketTarget || 0
-        })) : []
-      }));
-
-      const exportData = {
-        v: 1,
-        shops: exportShops,
-        t: Date.now()
-      };
-
-      try {
-        const jsonStr = JSON.stringify(exportData);
-        console.log('原始数据长度:', jsonStr.length);
-        
-        // 使用 UTF-8 编码
-        const encodedData = encodeURIComponent(btoa(unescape(encodeURIComponent(jsonStr))));
-        console.log('编码后长度:', encodedData.length);
-        
-        // 二维码容量限制约 2500 字符（安全起见设为 2000）
-        if (encodedData.length <= 2000) {
-          pageUrl = pageUrl + '?d=' + encodedData;
-          console.log('数据量适中，生成完整二维码');
-        } else {
-          console.log('数据量过大，使用简化模式');
-          // 只保留门店基本信息，去掉人员列表
-          const simplifiedData = {
-            v: 1,
-            shops: exportShops.map(s => ({
-              id: s.id,
-              name: s.name,
-              startDate: s.startDate,
-              endDate: s.endDate
-            })),
-            t: Date.now(),
-            msg: '数据太多，请联系管理员添加您的信息'
-          };
-          const simplifiedJson = JSON.stringify(simplifiedData);
-          const simplifiedEncoded = encodeURIComponent(btoa(unescape(encodeURIComponent(simplifiedJson))));
-          pageUrl = pageUrl + '?d=' + simplifiedEncoded;
-        }
-      } catch (e) {
-        console.error('数据编码失败:', e);
-      }
+      // 二维码只包含页面URL，数据通过 GitHub API 自动同步
+      const pageUrl = window.location.href.split('?')[0].split('#')[0];
 
       container.innerHTML = '';
 
