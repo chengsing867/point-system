@@ -2461,7 +2461,7 @@
       // 数据源优先级（重要！GitHub API 最新但有速率限制，jsdelivr 快但有缓存）
       // 管理员模式：用 GitHub API（确保拿到最新数据，避免 CDN 缓存导致删除后刷新重新出现）
       // 普通模式：先 jsdelivr（快）+ GitHub API（最新）
-      const sources;
+      let sources;
       if (state.currentUser && state.currentUser.isAdmin && GITHUB_CONFIG.token) {
         sources = [
           { name: 'GitHub API', fetch: () => fetchGitHubApi(`https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}&t=${ts}`) },
