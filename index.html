@@ -2058,8 +2058,10 @@
       .mini-points-table input { width: 42px; }
       .target-table input { width: 48px; }
     }
-  </style>
+ </style>
   <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"></script>
 </head>
 <body>
   <div id="toast" class="toast"></div>
@@ -2246,6 +2248,21 @@
       { type: 'delivery', name: '交付', unit: '个', rule: '30分/个', pointsPerUnit: 30 }
     ];
 
+    // Firebase 配置
+    const firebaseConfig = {
+      apiKey: "AIzaSyBs8D7Hk9Pz5Y2Yk2Yk2Yk2Yk2Yk2Yk2Yk",
+      authDomain: "point-system-7v8.firebaseapp.com",
+      databaseURL: "https://point-system-7v8-default-rtdb.firebaseio.com",
+      projectId: "point-system-7v8",
+      storageBucket: "point-system-7v8.appspot.com",
+      messagingSenderId: "1234567890",
+      appId: "1:1234567890:web:abc123"
+    };
+
+    // 初始化 Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
     // 目标配置
     const TARGET_TYPES = [
       { type: 'order', name: '订单', targetKey: 'orderTarget', achieveKey: 'orderAchieve' },
@@ -2270,57 +2287,67 @@
 
     function init() {
       loadData();
-      checkAuth();
     }
 
     function loadData() {
-      const users = localStorage.getItem('point_users');
-      const records = localStorage.getItem('point_records');
-      const targets = localStorage.getItem('point_targets');
-      const rules = localStorage.getItem('point_rules');
-      const shops = localStorage.getItem('point_shops');
-      state.users = users ? JSON.parse(users) : [];
-      state.records = records ? JSON.parse(records) : [];
-      state.targets = targets ? JSON.parse(targets) : {};
-      state.shops = shops ? JSON.parse(shops) : [];
-      
-      if (rules) {
-        state.rules = JSON.parse(rules);
-      } else {
-        state.rules = JSON.parse(JSON.stringify(ELEMENTS));
-        saveRules();
-      }
-      deduplicateRules();
-
-      const ADMIN_PHONE = '13829218486';
-      const adminUser = state.users.find(u => u.phone === ADMIN_PHONE);
-      if (!adminUser) {
-        state.users.push({
-          id: 'admin',
-          phone: ADMIN_PHONE,
-          name: '成林涛',
-          isAdmin: true,
-          createdAt: new Date().toISOString()
-        });
-        saveData();
-      } else {
-        if (!adminUser.isAdmin) {
-          adminUser.isAdmin = true;
-          adminUser.name = '成林涛';
+      db.ref('systemData').once('value').then(snapshot => {
+        const data = snapshot.val() || {};
+        state.users = data.users || [];
+        state.records = data.records || [];
+        state.targets = data.targets || {};
+        state.shops = data.shops || [];
+        
+        if (data.rules) {
+          state.rules = data.rules;
+        } else {
+          state.rules = JSON.parse(JSON.stringify(ELEMENTS));
           saveData();
         }
-      }
+        deduplicateRules();
+
+        const ADMIN_PHONE = '13829218486';
+        const adminUser = state.users.find(u => u.phone === ADMIN_PHONE);
+        if (!adminUser) {
+          state.users.push({
+            id: 'admin',
+            phone: ADMIN_PHONE,
+            name: '成林涛',
+            isAdmin: true,
+            createdAt: new Date().toISOString()
+          });
+          saveData();
+        } else {
+          if (!adminUser.isAdmin) {
+            adminUser.isAdmin = true;
+            adminUser.name = '成林涛';
+            saveData();
+          }
+        }
+
+        checkAuth();
+      }).catch(error => {
+        console.error('Failed to load data:', error);
+        showToast('数据加载失败，请检查网络', 'error');
+        checkAuth();
+      });
     }
 
     function saveData() {
-      localStorage.setItem('point_users', JSON.stringify(state.users));
-      localStorage.setItem('point_records', JSON.stringify(state.records));
-      localStorage.setItem('point_targets', JSON.stringify(state.targets));
-      localStorage.setItem('point_shops', JSON.stringify(state.shops));
+      const data = {
+        users: state.users,
+        records: state.records,
+        targets: state.targets,
+        shops: state.shops,
+        rules: state.rules
+      };
+      db.ref('systemData').set(data).catch(error => {
+        console.error('Failed to save data:', error);
+        showToast('数据保存失败，请检查网络', 'error');
+      });
     }
 
     function saveRules() {
-      localStorage.setItem('point_rules', JSON.stringify(state.rules));
+      saveData();
     }
 
     function isCurrentUserAdmin() {
@@ -2347,6 +2374,7 @@
           parsed.isAdmin = true;
           parsed.name = '成林涛';
         }
+        
         state.currentUser = parsed;
         if (shop) {
           state.currentShop = JSON.parse(shop);
