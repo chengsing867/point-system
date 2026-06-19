@@ -2060,7 +2060,6 @@
     }
  </style>
   <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <div id="toast" class="toast"></div>
@@ -2205,35 +2204,6 @@
             <button class="btn-export" onclick="exportData('all')">导出全部数据</button>
           </div>
         </div>
-
-        <!-- 云端配置 -->
-        <div class="admin-section-box">
-          <div class="section-label" style="border-left-color: #8b5cf6;">☁️ Supabase 云数据库配置</div>
-          <div style="padding: 12px; background: #f8f9fa; border-radius: 8px; margin-bottom: 8px;">
-            <div id="cloudStatus" style="font-size: 12px; color: #666; margin-bottom: 8px;"></div>
-            <div style="margin-bottom: 8px;">
-              <label style="font-size: 12px; color: #666; display: block; margin-bottom: 4px;">Project URL</label>
-              <input type="text" id="supabaseUrlInput" placeholder="https://xxxx.supabase.co" style="width:100%; padding:8px 12px; border:1px solid #e5e7eb; border-radius:6px; font-size:13px;">
-            </div>
-            <div style="margin-bottom: 8px;">
-              <label style="font-size: 12px; color: #666; display: block; margin-bottom: 4px;">Anon Key</label>
-              <input type="password" id="supabaseKeyInput" placeholder="eyJhbGciOi..." style="width:100%; padding:8px 12px; border:1px solid #e5e7eb; border-radius:6px; font-size:13px;">
-            </div>
-            <button onclick="saveSupabaseConfig()" style="width:100%; padding:10px; background:#8b5cf6; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:14px;">保存配置并同步</button>
-            <div style="font-size: 11px; color: #999; margin-top: 8px;">
-              <b>配置步骤：</b><br>
-              1. 访问 <a href="https://supabase.com" target="_blank" style="color: #8b5cf6;">supabase.com</a> 注册（任何邮箱即可）<br>
-              2. 创建新项目（选免费版）<br>
-              3. 在 SQL Editor 中执行建表语句（见下方）<br>
-              4. 在 Project Settings → API 中复制 URL 和 anon key<br>
-              5. 粘贴到上方输入框并保存<br>
-              <b>建表SQL：</b><br>
-              <textarea readonly style="width:100%; height:80px; margin-top:4px; font-size:10px; padding:4px; border:1px solid #e5e7eb; border-radius:4px;">create table app_data (id int primary key, data jsonb, updated_at timestamptz default now());
-alter table app_data enable row level security;
-create policy "allow all" on app_data for all using (true) with check (true);</textarea>
-            </div>
-          </div>
-        </div>
       </div>
       <div class="modal-footer">
         <button class="btn-secondary" onclick="closeAdminModal()">关闭</button>
@@ -2283,73 +2253,6 @@ create policy "allow all" on app_data for all using (true) with check (true);</t
       { type: 'ticket', name: '门票', targetKey: 'ticketTarget', achieveKey: 'ticketAchieve' }
     ];
 
-    // ===== Supabase 配置（云数据库，实时同步）=====
-    // 用户注册 Supabase 后，在管理界面输入项目 URL 和 anon key
-    const SUPABASE_CONFIG = {
-      url: '',      // 运行时从 localStorage 获取，例如 https://xxxx.supabase.co
-      anonKey: ''   // 运行时从 localStorage 获取
-    };
-    let supabaseClient = null;  // Supabase 客户端实例（避免与 window.supabase 冲突）
-    let realtimeChannel = null;  // 实时订阅频道
-
-    // 初始化 Supabase 客户端
-    function initSupabase() {
-      const savedUrl = safeGetItem('supabase_url');
-      const savedKey = safeGetItem('supabase_anon_key');
-      if (savedUrl && savedKey) {
-        SUPABASE_CONFIG.url = savedUrl;
-        SUPABASE_CONFIG.anonKey = savedKey;
-        try {
-          supabaseClient = window.supabase.createClient(savedUrl, savedKey);
-          console.log('✅ Supabase 客户端已初始化');
-          return true;
-        } catch (e) {
-          console.error('Supabase 初始化失败:', e);
-          return false;
-        }
-      }
-      return false;
-    }
-
-    // 保存 Supabase 配置（从管理界面输入）
-    function saveSupabaseConfig() {
-      const url = document.getElementById('supabaseUrlInput').value.trim();
-      const key = document.getElementById('supabaseKeyInput').value.trim();
-      if (!url || !key) {
-        showToast('请输入完整配置', 'error');
-        return;
-      }
-      SUPABASE_CONFIG.url = url;
-      SUPABASE_CONFIG.anonKey = key;
-      safeSetItem('supabase_url', url);
-      safeSetItem('supabase_anon_key', key);
-      try {
-        supabaseClient = window.supabase.createClient(url, key);
-        showToast('配置保存成功，正在同步数据...', 'success');
-        updateCloudStatus();
-        loadCloudData();
-        subscribeRealtime();
-      } catch (e) {
-        showToast('配置失败: ' + e.message, 'error');
-      }
-    }
-
-    // 更新云端状态显示
-    function updateCloudStatus() {
-      const statusEl = document.getElementById('cloudStatus');
-      if (!statusEl) return;
-      if (SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey) {
-        statusEl.innerHTML = '✅ 已配置 Supabase，数据实时同步<br>状态: ' + (cloudDataLoaded ? '云端连接正常' : '正在连接...');
-        statusEl.style.color = '#10b981';
-      } else {
-        statusEl.innerHTML = '⚠️ 未配置 Supabase，数据仅保存在本地，无法多端同步';
-        statusEl.style.color = '#ef4444';
-      }
-    }
-
-    // 云端数据加载状态
-    let cloudDataLoaded = false;
-
     let state = {
       currentUser: null,
       currentShop: null,
@@ -2381,9 +2284,7 @@ create policy "allow all" on app_data for all using (true) with check (true);</t
 
     function init() {
       try {
-        // 初始化 Supabase 客户端
-        initSupabase();
-        // 先从本地加载，立即显示界面
+        // 仅本地模式：从 localStorage 加载数据
         loadLocalData();
         // 检查登录状态（失败则清除并回退到登录页）
         try {
@@ -2404,13 +2305,6 @@ create policy "allow all" on app_data for all using (true) with check (true);</t
         const loginPage = document.getElementById('loginPage');
         if (loginPage) { loginPage.style.display = 'flex'; loginPage.classList.add('active'); }
       }
-      // 延迟加载云端数据，确保登录页先稳定渲染
-      setTimeout(() => {
-        try {
-          loadCloudData();
-          subscribeRealtime();
-        } catch (e) { console.error('loadCloudData 失败:', e); }
-      }, 200);
     }
 
     // 从本地存储加载数据
@@ -2420,12 +2314,10 @@ create policy "allow all" on app_data for all using (true) with check (true);</t
       const targets = safeGetItem('point_targets');
       const rules = safeGetItem('point_rules');
       const shops = safeGetItem('point_shops');
-      const localUpdatedAt = safeGetItem('point_updated_at');
       state.users = safeJSONParse(users, []);
       state.records = safeJSONParse(records, []);
       state.targets = safeJSONParse(targets, {});
       state.shops = safeJSONParse(shops, []);
-      state.localUpdatedAt = parseInt(localUpdatedAt || '0', 10) || 0;
       
       if (rules) {
         state.rules = safeJSONParse(rules, JSON.parse(JSON.stringify(ELEMENTS)));
@@ -2454,120 +2346,7 @@ create policy "allow all" on app_data for all using (true) with check (true);</t
       }
     }
 
-    // 从 Supabase 云端加载数据
-    function loadCloudData() {
-      if (!supabaseClient) {
-        console.log('未配置 Supabase，跳过云端加载');
-        return;
-      }
-
-      const loginBtn = document.querySelector('#step1 .btn-primary');
-      const setBtnLoading = (loading) => {
-        if (!loginBtn) return;
-        if (loading) {
-          loginBtn.textContent = '正在同步数据...';
-          loginBtn.disabled = true;
-          loginBtn.style.opacity = '0.6';
-        } else {
-          loginBtn.textContent = '登 录';
-          loginBtn.disabled = false;
-          loginBtn.style.opacity = '1';
-        }
-      };
-      setBtnLoading(true);
-
-      // 超时保护：8秒后恢复登录按钮
-      let finished = false;
-      const timeoutId = setTimeout(() => {
-        if (!finished) {
-          finished = true;
-          console.warn('云端数据加载超时(8s)，使用本地数据');
-          cloudDataLoaded = false;
-          safeCall(updateCloudStatus);
-          setBtnLoading(false);
-        }
-      }, 8000);
-
-      // 从 Supabase 的 app_data 表读取 id=1 的记录
-      supabaseClient.from('app_data').select('data, updated_at').eq('id', 1).maybeSingle()
-        .then(({ data, error }) => {
-          if (finished) return;
-          finished = true;
-          clearTimeout(timeoutId);
-
-          if (error) {
-            console.error('Supabase 加载失败:', error.message);
-            cloudDataLoaded = false;
-            safeCall(updateCloudStatus);
-            setBtnLoading(false);
-            return;
-          }
-
-          if (!data || !data.data) {
-            console.log('云端无数据，使用本地数据');
-            cloudDataLoaded = true;
-            safeCall(updateCloudStatus);
-            setBtnLoading(false);
-            return;
-          }
-
-          // 解析云端数据
-          const cloudData = typeof data.data === 'string' ? JSON.parse(data.data) : data.data;
-          const cloudUpdatedAt = data.updated_at ? new Date(data.updated_at).getTime() : 0;
-          const localUpdatedAt = state.localUpdatedAt || 0;
-
-          // 时间戳对比：只有云端更新时才覆盖本地
-          if (cloudUpdatedAt > localUpdatedAt) {
-            console.log('✅ 云端数据更新，覆盖本地');
-            state.users = cloudData.users || state.users;
-            state.records = cloudData.records || state.records;
-            state.targets = cloudData.targets || state.targets;
-            state.shops = cloudData.shops || state.shops;
-            if (cloudData.rules) state.rules = cloudData.rules;
-            state.localUpdatedAt = cloudUpdatedAt;
-            saveLocalData();
-          } else {
-            console.log('ℹ️ 本地数据已是最新');
-          }
-
-          cloudDataLoaded = true;
-          console.log('当前门店数：', state.shops.length, '，用户数：', state.users.length);
-          safeCall(updateCloudStatus);
-          setBtnLoading(false);
-
-          if (state.currentUser) {
-            safeCall(updateUserInfo);
-            safeCall(renderTeamSummaryColumn);
-            safeCall(updateBanner);
-          }
-        })
-        .catch(err => {
-          if (finished) return;
-          finished = true;
-          clearTimeout(timeoutId);
-          console.error('Supabase 加载异常:', err.message);
-          cloudDataLoaded = false;
-          safeCall(updateCloudStatus);
-          setBtnLoading(false);
-        });
-    }
-
-    // 实时订阅：当云端数据变化时自动刷新（手机修改电脑秒级看到）
-    function subscribeRealtime() {
-      if (!supabaseClient) return;
-      // 避免重复订阅
-      if (realtimeChannel) {
-        try { supabaseClient.removeChannel(realtimeChannel); } catch (e) {}
-      }
-      realtimeChannel = supabaseClient.channel('app_data_changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'app_data' }, payload => {
-          console.log('🔄 收到实时更新:', payload.eventType);
-          // 收到更新通知后，重新加载云端数据
-          loadCloudData();
-        })
-        .subscribe();
-    }
-
+    // 从本地存储加载数据（仅本地模式，无云端）
     function loadData() {
       loadLocalData();
     }
@@ -2579,76 +2358,15 @@ create policy "allow all" on app_data for all using (true) with check (true);</t
       safeSetItem('point_targets', JSON.stringify(state.targets));
       safeSetItem('point_shops', JSON.stringify(state.shops));
       safeSetItem('point_rules', JSON.stringify(state.rules));
-      safeSetItem('point_updated_at', String(state.localUpdatedAt || Date.now()));
     }
 
-    // 保存数据（本地 + 云端）
+    // 保存数据（仅本地模式）
     function saveData() {
-      // 更新本地修改时间戳
-      state.localUpdatedAt = Date.now();
-      // 先保存到本地
       saveLocalData();
-      // 异步保存到 Supabase 云端
-      saveCloudData();
-    }
-
-    // 保存数据到 Supabase 云端（所有用户都能写入，无需 Token）
-    let saveLock = false;
-    let pendingSave = false;
-
-    function saveCloudData() {
-      if (!supabaseClient) {
-        console.log('未配置 Supabase，数据仅保存在本地');
-        return;
-      }
-
-      // 串行化保存
-      if (saveLock) {
-        pendingSave = true;
-        return;
-      }
-      saveLock = true;
-
-      const data = {
-        users: state.users,
-        records: state.records,
-        targets: state.targets,
-        shops: state.shops,
-        rules: state.rules,
-        updatedAt: new Date().toISOString()
-      };
-
-      // 使用 upsert：如果 id=1 存在则更新，不存在则插入
-      supabaseClient.from('app_data').upsert({
-        id: 1,
-        data: data,
-        updated_at: new Date().toISOString()
-      }).select()
-        .then(({ data: result, error }) => {
-          if (error) {
-            console.error('云端保存失败:', error.message);
-            showToast('云端保存失败: ' + error.message, 'error');
-          } else {
-            console.log('✅ 数据已同步到 Supabase 云端');
-          }
-        })
-        .catch(err => {
-          console.error('云端保存异常:', err.message);
-          showToast('云端保存异常: ' + err.message, 'error');
-        })
-        .finally(() => {
-          saveLock = false;
-          if (pendingSave) {
-            pendingSave = false;
-            setTimeout(() => saveCloudData(), 300);
-          }
-        });
     }
 
     function saveRules() {
-      state.localUpdatedAt = Date.now();
       saveLocalData();
-      saveCloudData();
     }
 
     function isCurrentUserAdmin() {
@@ -4106,7 +3824,6 @@ create policy "allow all" on app_data for all using (true) with check (true);</t
       resetShopForm();
       renderShopList();
       renderRulesSettings();
-      updateCloudStatus();
       document.getElementById('adminModal').classList.add('show');
     }
     
@@ -4320,7 +4037,7 @@ create policy "allow all" on app_data for all using (true) with check (true);</t
       const container = document.getElementById('qrImageContainer');
       const urlText = document.getElementById('qrUrlText');
 
-      // 二维码只包含页面URL，数据通过 GitHub API 自动同步
+      // 二维码包含页面URL，扫码后打开本页面（仅本地模式）
       const pageUrl = window.location.href.split('?')[0].split('#')[0];
 
       container.innerHTML = '';
