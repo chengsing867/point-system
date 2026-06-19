@@ -2060,6 +2060,7 @@
     }
  </style>
   <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 <body>
   <div id="toast" class="toast"></div>
@@ -2118,7 +2119,10 @@
     <!-- 顶部团队汇总区域 - 全宽横幅表格 -->
     <div style="margin-bottom: 16px; padding: 0 12px;">
       <div class="column-card">
-        <div class="column-header">📊 团队汇总</div>
+        <div class="column-header" style="display:flex; justify-content:space-between; align-items:center;">
+          <span>📊 团队汇总</span>
+          <button onclick="exportLongImage()" style="background:#10b981; color:#fff; border:none; padding:4px 12px; border-radius:6px; cursor:pointer; font-size:12px;">📷 导出长图</button>
+        </div>
         <div class="column-content" id="teamSummaryColumn"></div>
       </div>
     </div>
@@ -2202,6 +2206,7 @@
           <div class="export-buttons">
             <button class="btn-export" onclick="exportData('week')">导出本周数据</button>
             <button class="btn-export" onclick="exportData('all')">导出全部数据</button>
+            <button class="btn-export" onclick="exportLongImage()" style="background:#10b981;">📷 导出长图</button>
           </div>
         </div>
       </div>
@@ -4553,6 +4558,76 @@
       URL.revokeObjectURL(url);
 
       showToast('数据导出成功', 'success');
+    }
+
+    // 导出长图（将团队汇总表格截图为 PNG）
+    function exportLongImage() {
+      const sourceWrapper = document.querySelector('#teamSummaryColumn .team-banner-wrapper');
+      if (!sourceWrapper) {
+        showToast('暂无数据可导出，请先添加人员', 'error');
+        return;
+      }
+
+      const shopName = state.currentShop ? state.currentShop.name : '';
+      const now = new Date();
+      showToast('正在生成长图，请稍候...', 'success');
+
+      // 创建临时容器，完整展开表格（不滚动）
+      const tempContainer = document.createElement('div');
+      tempContainer.style.cssText = 'position:fixed;left:-9999px;top:0;background:#ffffff;padding:24px;box-sizing:border-box;';
+
+      // 标题
+      const titleEl = document.createElement('div');
+      titleEl.style.cssText = 'text-align:center;font-size:22px;font-weight:bold;margin-bottom:8px;color:#1f2937;';
+      titleEl.textContent = `${shopName || '门店'} - 团队汇总报表`;
+      tempContainer.appendChild(titleEl);
+
+      // 副标题（导出时间）
+      const subtitleEl = document.createElement('div');
+      subtitleEl.style.cssText = 'text-align:center;font-size:13px;color:#6b7280;margin-bottom:16px;';
+      subtitleEl.textContent = `导出时间：${now.toLocaleString('zh-CN')}`;
+      tempContainer.appendChild(subtitleEl);
+
+      // 克隆表格，移除滚动限制让所有列完整展开
+      const cloned = sourceWrapper.cloneNode(true);
+      const scroll = cloned.querySelector('.team-banner-scroll');
+      if (scroll) {
+        scroll.style.overflow = 'visible';
+        scroll.style.width = 'auto';
+        scroll.style.maxWidth = 'none';
+      }
+      const table = cloned.querySelector('.team-banner-table');
+      if (table) {
+        table.style.width = 'auto';
+        table.style.minWidth = '100%';
+      }
+      tempContainer.appendChild(cloned);
+
+      document.body.appendChild(tempContainer);
+
+      // 使用 html2canvas 截图
+      html2canvas(tempContainer, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        logging: false,
+        windowWidth: tempContainer.scrollWidth
+      }).then(canvas => {
+        document.body.removeChild(tempContainer);
+        // 下载图片
+        const link = document.createElement('a');
+        const fileName = `${shopName || '门店'}_团队汇总_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}.png`;
+        link.download = fileName;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        showToast('长图导出成功', 'success');
+      }).catch(err => {
+        if (document.body.contains(tempContainer)) {
+          document.body.removeChild(tempContainer);
+        }
+        console.error('导出长图失败:', err);
+        showToast('导出长图失败: ' + err.message, 'error');
+      });
     }
 
     function addMember() {
